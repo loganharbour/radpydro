@@ -1,7 +1,9 @@
-from geometry import SphericalGeometry
+from inputparameters import InputParameters
+from radpydro import RadPydro
 
-test = SphericalGeometry(5, 5)
+input = InputParameters()
+input.geometry = 'spherical'
+input.r_max = 5
+input.N = 5
 
-print(test.r)
-print(test.A)
-print(test.V)
+rp = RadPydro(input)
