@@ -1,74 +1,92 @@
 import numpy as np
 from sys import exit
-from tools import checkInteger, checkNumber
 
 class Geometry:
     def __init__(self, rp):
         self.rp = rp
         self.input = rp.input
 
-        # Spatial domain size
-        self.r_max = checkNumber(self.input.r_max, "r_max")
-        self.r_max_old = self.r_max
-
+        # Radius at cell edges (user defined)
+        self.r_half = np.copy(self.input.r_half)
+        self.r_half_old = np.copy(self.input.r_half)
         # Number of cells
-        self.N = checkInteger(self.input.N, "N")
+        self.N = self.r_half.size - 1
+        # Spatial domain size
+        self.r_max = self.r_half[-1]
+        self.r_max_old = self.r_half[-1]
 
-        # Radius at cell centers (uniform spacing)
-        self.r = np.linspace(0, self.r_max, num=self.N + 1)
+        # Radius at cell centers
+        dr = self.r_max / self.N
+        self.r = np.linspace(dr / 2, self.r_max - dr / 2, num=self.N)
         self.r_old = np.copy(self.r)
 
-        # Empty containers for areas, volumes, and masses
+        # Areas (defined at edges)
         self.A = np.zeros(self.N + 1)
         self.A_old = np.zeros(self.N + 1)
-        self.V = np.zeros(self.N + 1)
-        self.V_old = np.zeros(self.N + 1)
-        self.rho = np.zeros(self.N + 1)
-        self.m = np.zeros(self.N + 1)
+        # Volumes (defined on spatial cells)
+        self.V = np.zeros(self.N)
+        self.V_old = np.zeros(self.N)
+        # Radius at cell centers
+        self.r = np.zeros(self.N)
+        self.r_old = np.zeros(self.N)
 
-        # Fill areas and volumes
-        self.recompute(True)
+        # Initialize A, V, r and copy to old
+        self.recomputeGeometry()
+        np.copyto(self.A_old, self.A)
+        np.copyto(self.V_old, self.V)
+        np.copyto(self.r_old, self.r)
 
-    def recompute(self, init = False):
-        self.A_old = np.copy(self.A)
-        self.V_old = np.copy(self.V)
+    def moveMesh(self, u, u_old, dt):
+        # Recompute radii at edges
+        np.copyto(self.r_half_old, self.r_half)
+        self.r_half += 0.5 * (u + u_old) * dt
 
-        self.computeAreas()
-        self.computeVolumes()
+        # Recompute A, V, and r using newly obtained r_half
+        self.recomputeGeometry()
 
-        # Copy to old on init
-        if (init):
-            self.A_old = np.copy(self.A)
-            self.V_old = np.copy(self.V)
+    # Recompute A, V, and r using r_half
+    def recomputeGeometry(self):
+        # Copy over to old
+        np.copyto(self.A_old, self.A)
+        np.copyto(self.V_old, self.V)
+        np.copyto(self.r_old, self.r)
 
-    def computeAreas(self):
-        sys.exit('Can only call computeAreas() from inherited geometry classes')
+        # Recompute areas and volumes (dependent on geometry type)
+        self.recomputeAreas()
+        self.recomputeVolumes()
+
+        # Recompute new cell centered radii
+        for i in range(self.N):
+            self.r[i] = (self.r_half[i] + self.r_half[i + 1]) / 2
+
+    # Recompute area function to be overridden by children classes
+    def recomputeAreas(self):
         pass
 
-    def computeVolumes(self):
-        sys.exit('Can only call computeVolumes() from inherited geometry classes')
+    # Recompute volume function to be overridden by children classes
+    def recomputeVolumes(self):
         pass
 
 class SlabGeometry(Geometry):
-    def computeAreas(self):
-        self.A = 1
+    def recomputeAreas(self):
+        self.A.fill(1.0)
 
-    def computeVolumes(self):
+    def recomputeVolumes(self):
         for i in range(self.N):
-            self.V[i] = self.r[i + 1] - self.r[i]
+            self.V[i] = self.r_half[i + 1] - self.r_half[i]
 
 class CylindricalGeometry(Geometry):
-    def computeAreas(self):
-        self.A = 2 * np.pi * self.r
+    def recomputeAreas(self):
+        self.A = 2 * np.pi * self.r_half
 
-    def computeVolumes(self):
+    def recomputeVolumes(self):
         for i in range(self.N):
-            self.V[i] = np.pi * (self.r[i + 1]**2 - self.r[i]**2)
+            self.V[i] = np.pi * (self.r_half[i + 1]**2 - self.r_half[i]**2)
 
 class SphericalGeometry(Geometry):
-    def computeAreas(self):
-        self.A = 4 * np.pi * np.square(self.r)
+    def recomputeAreas(self):
+        self.A = 4 * np.pi * np.square(self.r_half)
 
-    def computeVolumes(self):
+    def recomputeVolumes(self):
         for i in range(self.N):
-            self.V[i] = 4 * np.pi * (self.r[i + 1]**3 - self.r[i]**3) / 3
+            self.V[i] = 4 * np.pi * (self.r_half[i + 1]**3 - self.r_half[i]**3) / 3
