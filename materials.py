@@ -8,42 +8,46 @@ class Materials:
         self.geo = rp.geo
         self.N = rp.geo.N
 
-        # Densities (defined on spatial cells)
-        self.rho = np.zeros(self.N)
-        self.rho_old = np.zeros(self.N)
-        # Specific energy densities (defined on spatial cells)
-        self.C_v = np.zeros(self.N)
-        # Compressability coefficient (defined on spatial cells)
-        self.gamma = np.zeros(self.N)
-        # Kappa coefficients (defined on spatial cells)
-        self.k_1 = np.zeros(self.N)
-        self.k_2 = np.zeros(self.N)
-        self.k_3 = np.zeros(self.N)
-        self.k_n = np.zeros(self.N)
-
-        # Fill spatial cell material properties
-        for i in range(self.N):
-            r = self.geo.r[i]
-            self.rho_old[i] = self.input.rho(r)
-            self.C_v[i] = self.input.C_v(r)
-            self.gamma[i] = self.input.gamma(r)
-            self.k_1[i], self.k_2[i], self.k_3[i], self.k_n[i] = self.input.k(r)
-        np.copyto(self.rho, self.rho_old)
-
-        # Initialize spatial cell masses (m = rho * v)
+        # Specific energy density (constant)
+        self.C_v = self.input.C_v
+        # Compressability coefficient (constant)
+        self.gamma = self.input.gamma
+        # Kappa function (bottom of page 1 in codespec)
+        k1, k2, k3, n = self.input.kappa
+        self.kappa_func = lambda T: k1 / (k2 * T**n + k3)
+        # Absorption opacity (defined on spatial cells)
+        self.kappa_a = np.zeros(self.N)
+        self.kappa_a_old = np.zeros(self.N)
+        # Absorption opacity at T_1/2 (defined on cell edges, Eq. 19)
+        self.kappa_t = np.zeros(self.N + 1)
+        self.kappa_t_old = np.zeros(self.N + 1)
+        # Container for masses
         self.m = np.zeros(self.N)
-        np.multiply(self.geo.V, self.rho, out=self.m)
-        # Initialize median mesh masses
         self.m_half = np.zeros(self.N + 1)
+
+    # Initialize masses after rho has been computed the first time
+    def initializeMasses(self, rho):
+        self.m = self.geo.V * rho
         self.m_half[0] = self.m[0] / 2 # see below Eq. 38
         self.m_half[-1] = self.m[-1] / 2 # see below Eq. 38
         for i in range(1, self.N - 1):
-            self.m_half[i] = self.geo.V[i - 1] * self.rho[i - 1] + self.geo.V[i] * self.rho[i]
+            self.m_half[i] = self.geo.V[i - 1] * rho[i - 1]
+            self.m_half[i] += self.geo.V[i] * rho[i]
 
-    # Recompute densities with newly updated volumes
-    def recomputeRho(self):
-        # Copy over to old
-        np.copyto(self.rho_old, self.rho)
+    # Recompute kappa_a with a new temperature T (bottom of page 1 in codespec)
+    def recomputeKappa_a(self, T):
+        np.copyto(self.kappa_a_old, self.kappa_a)
+        for i in range(self.N):
+            self.kappa_a = self.kappa_func(T[i])
 
-        # And recompute (rho = m / rho)
-        np.divide(self.m, self.geo.V, out=self.rho)
+    # Recompute kappa_t with a new temperature T (Eq. 19)
+    def recomputeKappa_t(self, T):
+        np.copyto(self.kappa_t_old, self.kappa_t)
+        # Left boundary (use T_1)
+        self.kappa_t[0] = self.kappa_func(T[0])
+        # Right boundary (use T_N)
+        self.kappa_t[-1] = self.kappa_func(T[-1])
+        # Interior edges
+        for i in range(1, self.N - 1):
+            Tedge = ((T[i]**4 + T[i + 1]**4) / 2)**(1 / 4)
+            self.kappa_t[i] = self.kappa_func(Tedge)

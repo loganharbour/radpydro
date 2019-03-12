@@ -1,6 +1,13 @@
 import numpy as np
 from sys import exit
 
+# Ensure value is of type float or integer
+def checkScalar(value, prefix):
+    if isinstance(value, float) or isinstance(value, int):
+        return value
+    else:
+        sys.exit('{} needs to be specified as a scalar'.format(prefix))
+
 class InputParameters:
     def __init__(self):
         # Geometry specficiations
@@ -13,12 +20,15 @@ class InputParameters:
 
         # Material properties
         self.C_v = None
-        self.rho = None
         self.gamma = None
-        self.k = None
+        self.a = None
+        self.kappa = None
 
         # Initial conditions
+        self.E = None
+        self.rho = None
         self.T = None
+        self.u = None
 
         # Hydro boundary conditions
         self.u_BC = None
@@ -36,20 +46,23 @@ class InputParameters:
             exit("No problem to run")
 
         # Material properties
-        if not callable(self.C_v):
-            exit("Need to specify C_v property as a function")
-        if not callable(self.rho):
-            exit("Need to specify rho initial condition as a function")
-        if not callable(self.gamma):
-            exit("Need to specify gamma property as a function")
-        if not callable(self.k):
-            exit("Need to specify k property as a function")
-        if len(self.k(0)) != 4:
-            exit("k needs to return length 4 (k1, k2, k3, n)")
+        checkScalar(self.C_v, "C_v")
+        checkScalar(self.gamma, "gamma")
+        checkScalar(self.a, "a")
+        if self.kappa is None or len(self.kappa) != 4:
+            exit("Need to specify k property as a list of 4 scalars (1, 2, 3, n)")
 
         # Initial conditions
+        if not callable(self.rho):
+            exit("Need to specify rho initial condition as a function")
         if not callable(self.T):
             exit("Need to specify T initial condition as a function")
+        if callable(self.E) and not self.enable_radiation:
+            print("E initial condition is provided but radiation is disabled")
+        if not callable(self.E) and self.enable_radiation:
+            exit("Need to specify E initial coniditon as a function")
+        if not callable(self.u):
+            exit("Need to specify u initial condition as a function")
 
         # Velocity and pressure BC checks
         if (self.u_BC is None and self.P_BC is None):
