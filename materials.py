@@ -8,6 +8,10 @@ class Materials:
         self.geo = rp.geo
         self.N = rp.geo.N
 
+        # Speed of light [cm / sh]
+        self.c = 299.792
+        # Radiation constant [j / (cm3 kev4)]
+        self.a = self.input.a
         # Specific energy density (constant)
         self.C_v = self.input.C_v
         # Compressability coefficient (constant)
