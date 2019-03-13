@@ -15,11 +15,6 @@ class Geometry:
         self.r_max = self.r_half[-1]
         self.r_max_old = self.r_half[-1]
 
-        # Radius at cell centers
-        dr = self.r_max / self.N
-        self.r = np.linspace(dr / 2, self.r_max - dr / 2, num=self.N)
-        self.r_old = np.copy(self.r)
-
         # Areas (defined at edges)
         self.A = np.zeros(self.N + 1)
         self.A_old = np.zeros(self.N + 1)
@@ -29,6 +24,10 @@ class Geometry:
         # Radius at cell centers
         self.r = np.zeros(self.N)
         self.r_old = np.zeros(self.N)
+
+        # Cells widths 
+        self.dr = np.zeros(self.N)
+        self.dr_old = np.zero(self.N)
 
         # Initialize A, V, r and copy to old
         self.recomputeGeometry()
