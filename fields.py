@@ -19,18 +19,12 @@ class Fields:
         self.T_old = np.zeros(self.N)
         # Apply temperature initial condition
         self.initializeAtCenters(self.T_old, self.input.T)
-        # Initialize kappa_a and kappa_t with T_old
-        self.mat.recomputeKappa_a(self.T_old)
-        self.mat.recomputeKappa_t(self.T_old)
 
         # Densities (spatial cell centers)
         self.rho = np.zeros(self.N)
         self.rho_old = np.zeros(self.N)
         # Initialize density
         self.initializeAtCenters(self.rho_old, self.input.rho)
-        # Initialize mass now that we have densities
-        self.mat.initializeMasses(self.rho_old)
-
         # Pressures (spatial cell centers)
         self.P = np.zeros(self.N)
         # Apply pressure initial condition (Eqs. 22 and 23)
@@ -58,6 +52,9 @@ class Fields:
         if self.P_BC is not None:
             self.P_old[0] = self.P_BC[0]
             self.P_old[-1] = self.P_BC[1]
+
+        # Initialize the rest of the materials that depend on field variables
+        self.mat.initFromFields(self)
 
     # Initialize variable with function at the spatial cell centers
     def initializeAtCenters(self, variable, function):
