@@ -13,6 +13,10 @@ class Fields:
         self.u_old = np.zeros(self.N + 1)
         # Apply velocity initial condition
         self.initializeAtEdges(self.u_old, self.input.u)
+        # Store velocity BCs if necessary
+        self.constrain_u = self.input.constrain_u
+        if self.constrain_u:
+            self.u_BC = [self.input.u(0), self.input.u(self.geo.r_half_old[-1])]
 
         # Temperature (spatial cell centers)
         self.T = np.zeros(self.N)
@@ -25,10 +29,14 @@ class Fields:
         self.rho_old = np.zeros(self.N)
         # Initialize density
         self.initializeAtCenters(self.rho_old, self.input.rho)
+
         # Pressures (spatial cell centers)
         self.P = np.zeros(self.N)
         # Apply pressure initial condition (Eqs. 22 and 23)
         self.P_old = (self.mat.gamma - 1) * self.mat.C_v * self.T_old * self.rho_old
+        # Store pressure boundary conditions if necessary
+        if not self.constrain_u:
+            self.P_BC = self.input.P_BC
 
         # Internal energies (spatial cell centers)
         self.e = np.zeros(self.N)
@@ -38,20 +46,9 @@ class Fields:
         # Radiation energies (spatial cell centers)
         self.E = np.zeros(self.N)
         self.E_old = np.zeros(self.N)
+        self.E_BC = [0, 0]
         # Apply radiation initial condition (if given)
         self.initializeAtCenters(self.E_old, self.input.E)
-
-        # User input boundary conditions ([0] is left value, [1] is right value)
-        self.u_BC = self.input.u_BC
-        self.P_BC = self.input.P_BC
-        # Apply velocity boundary conditions
-        if self.u_BC is not None:
-            self.u_old[0] = self.u_BC[0]
-            self.u_old[-1] = self.u_BC[1]
-        # Apply pressure boundary conditions
-        if self.P_BC is not None:
-            self.P_old[0] = self.P_BC[0]
-            self.P_old[-1] = self.P_BC[1]
 
         # Initialize the rest of the materials that depend on field variables
         self.mat.initFromFields(self)

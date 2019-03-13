@@ -20,8 +20,8 @@ class Materials:
         self.kappa_a = np.zeros(self.N)
         self.kappa_a_old = np.zeros(self.N)
         # Absorption opacity at T_1/2 (defined on cell edges, Eq. 19)
-        self.kappa_t = np.zeros(self.N + 1)
-        self.kappa_t_old = np.zeros(self.N + 1)
+        self.kappa_t = np.zeros(self.N)
+        self.kappa_t_old = np.zeros(self.N)
         # Container for masses
         self.m = np.zeros(self.N)
         self.m_half = np.zeros(self.N + 1)
@@ -51,11 +51,11 @@ class Materials:
     # Recompute kappa_t with a new temperature T (Eq. 19)
     def recomputeKappa_t(self, T):
         np.copyto(self.kappa_t_old, self.kappa_t)
-        # Left boundary (use T_1)
+        # Left cell (use T_1)
         self.kappa_t[0] = self.kappa_func(T[0])
-        # Right boundary (use T_N)
+        # Right cell (use T_N)
         self.kappa_t[-1] = self.kappa_func(T[-1])
-        # Interior edges
-        for i in range(1, self.N - 1):
+        # Interior cells
+        for i in range(1, self.N - 2):
             Tedge = ((T[i]**4 + T[i + 1]**4) / 2)**(1 / 4)
             self.kappa_t[i] = self.kappa_func(Tedge)
