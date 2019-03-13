@@ -36,7 +36,7 @@ class Fields:
             self.P_BC = self.input.P_BC
 
         # Internal energies (spatial cell centers)
-        self.e = self.mat.C_v * np.copy(self.T_old)
+        self.e = self.mat.C_v * self.T_old
         self.e_p = np.copy(self.e)
         self.e_old = np.copy(self.e)
 
@@ -73,7 +73,23 @@ class Fields:
                 values[i] = function(self.geo.r_half[i])
         return values
 
-    # Recompute densities with newly updated volumes (rho = m / rho)
-    def recomputeRho(self):
-        np.copyto(self.rho_old, self.rho)
-        np.divide(self.mat.m, self.geo.V, out=self.rho)
+    # Recmpute rho with an updated V
+    def recomputeRho(self, predictor):
+        if predictor:
+            self.rho_p = self.mat.m / self.V_p
+        else:
+            self.rho = self.mat.m / self.V
+
+    # Recompute temperature with an updated e
+    def recomputeT(self, predictor):
+        if predictor:
+            self.T_p = self.mat.C_v * self.e_p
+        else:
+            self.T = self.mat.C_v * self.e
+
+    # Recompute pressure with an updated rho and e
+    def recomputeP(self, predictor)
+        if predictor:
+            self.P_p = (self.mat.gamma - 1) * self.rho_p * self.e_p
+        else:
+            self.P = (self.mat.gamma - 1) * self.rho * self.e
