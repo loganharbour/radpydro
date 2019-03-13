@@ -9,10 +9,11 @@ input.C_v = 1.0
 input.gamma = 1.0
 input.kappa = [1, 1, 1, 1]
 input.a = 1.0
-input.u_BC = [1, 1]
+input.P_BC = [1, 1]
 input.E = lambda r: 1.0
 input.rho = lambda r: 1.0
 input.T = lambda r: 1.0
 input.u = lambda r: 1.0
+input.constrain_u = False
 
 rp = RadPydro(input)

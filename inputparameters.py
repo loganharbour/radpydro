@@ -31,8 +31,9 @@ class InputParameters:
         self.u = None
 
         # Hydro boundary conditions
-        self.u_BC = None
+        self.contrain_u = None
         self.P_BC = None
+        self.E_BC = None
 
     def checkInputs(self):
         # Geometry checks
@@ -64,8 +65,12 @@ class InputParameters:
         if not callable(self.u):
             exit("Need to specify u initial condition as a function")
 
-        # Velocity and pressure BC checks
-        if (self.u_BC is None and self.P_BC is None):
-            exit("Either a velocity BC (u_BC) or a pressure BC (P_BC) is required")
-        if (self.u_BC is not None and self.P_BC is not None):
-            exit("Velocity (u_BC) and pressure (P_BC) cannot be specified together")
+        # Boundary conditions
+        if type(self.constrain_u) != bool:
+            exit("constrain_u needs to be either True or False")
+        if self.constrain_u and self.P_BC is not None:
+            exit("Velocity (constain_u) and pressure (P_BC) cannot be specified together")
+        if self.E_BC is not None and len(self.E_BC) != 2:
+            exit("E_BC must either be None (reflective) or two values (source)")
+        if self.P_BC is not None and len(self.P_BC) != 2:
+            exit("If set, P_BC must be two values (left and right)")
