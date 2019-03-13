@@ -1,9 +1,9 @@
+from fields import Fields
 from geometry import SlabGeometry, CylindricalGeometry, SphericalGeometry
 from inputparameters import InputParameters
 from lagrangian_hydro import LagrangianHydro
 from lagrangian_radiation import LagrangianRadiation
 from materials import Materials
-from sys import exit
 
 class RadPydro:
     def __init__(self, input):
@@ -22,10 +22,9 @@ class RadPydro:
         # Initialize material handler now that geometry is initialized
         self.mat = Materials(self)
 
+        # Initialize field variables
+        self.fields = Fields(self)
+
         # Initialize the radiation and hydro problems
         self.rad = LagrangianRadiation(self)
         self.hydro = LagrangianHydro(self)
-
-        # Define easy access in each problem to the other
-        self.rad.hydro = self.hydro
-        self.hydro.rad = self.rad
