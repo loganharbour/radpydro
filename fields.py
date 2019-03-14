@@ -88,7 +88,7 @@ class Fields:
             self.T = self.mat.C_v * self.e
 
     # Recompute pressure with an updated rho and e
-    def recomputeP(self, predictor)
+    def recomputeP(self, predictor):
         if predictor:
             self.P_p = (self.mat.gamma - 1) * self.rho_p * self.e_p
         else:

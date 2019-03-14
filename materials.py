@@ -31,7 +31,7 @@ class Materials:
         V_old = self.geo.V_old
 
         # Initialize masses now that rho has been computed
-        # TODO: TALK TO MOREL ABOUT THIS
+        # NOTE: Morel said this is good for now. Might correct later?
         m = V_old * rho_old
         m_half[0] = m[0] / 2 # see below Eq. 38
         m_half[-1] = m[-1] / 2 # see below Eq. 38

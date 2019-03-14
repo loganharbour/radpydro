@@ -70,7 +70,9 @@ class InputParameters:
             exit("constrain_u needs to be either True or False")
         if self.constrain_u and self.P_BC is not None:
             exit("Velocity (constain_u) and pressure (P_BC) cannot be specified together")
+        if self.E_BC is None:
+            exit("E_BC must be set (fix this later! what do we do w/o E_BC?)")
         if self.E_BC is not None and len(self.E_BC) != 2:
-            exit("E_BC must either be None (reflective) or two values (source)")
+            exit("E_BC must be two values [0, 0] for reflective, [val1, val2] for source")
         if self.P_BC is not None and len(self.P_BC) != 2:
             exit("If set, P_BC must be two values (left and right)")
