@@ -1,12 +1,8 @@
 import numpy as np
 from sys import exit
 
-# Ensure value is of type float or integer
-def checkScalar(value, prefix):
-    if isinstance(value, float) or isinstance(value, int):
-        return value
-    else:
-        sys.exit('{} needs to be specified as a scalar'.format(prefix))
+def isScalar(value):
+    return isinstance(value, float) or isinstance(value, int)
 
 class InputParameters:
     def __init__(self):
@@ -32,9 +28,16 @@ class InputParameters:
         self.u = None
 
         # Hydro boundary conditions
-        self.contrain_u = None
-        self.P_BC = None
-        self.E_BC = None
+        self.hydro_L = None
+        self.hydro_R = None
+        self.hydro_L_val = None
+        self.hydro_R_val = None
+
+        # Radiation boundary conditions
+        self.rad_L = None
+        self.rad_R = None
+        self.rad_L_val = None
+        self.rad_R_val = None
 
     def checkInputs(self):
         # Geometry checks
@@ -48,9 +51,14 @@ class InputParameters:
             exit("No problem to run")
 
         # Material properties
-        checkScalar(self.C_v, "C_v")
-        checkScalar(self.gamma, "gamma")
-        checkScalar(self.a, "a")
+        if not isScalar(self.C_v):
+            exit("Need to specify C_v as a scalar")
+        if not isScalar(self.gamma):
+            exit("Need to specify gamma as a scalar")
+        if not isScalar(self.a):
+            exit("Need to specify a as a scalar")
+        if not isScalar(self.kappa_s):
+            exit("Need to specify kappa_s as a scalar")
         if self.kappa is None or len(self.kappa) != 4:
             exit("Need to specify k property as a list of 4 scalars (1, 2, 3, n)")
 
@@ -66,14 +74,26 @@ class InputParameters:
         if not callable(self.u):
             exit("Need to specify u initial condition as a function")
 
-        # Boundary conditions
-        if type(self.constrain_u) != bool:
-            exit("constrain_u needs to be either True or False")
-        if self.constrain_u and self.P_BC is not None:
-            exit("Velocity (constain_u) and pressure (P_BC) cannot be specified together")
-        if self.E_BC is None:
-            exit("E_BC must be set (fix this later! what do we do w/o E_BC?)")
-        if self.E_BC is not None and len(self.E_BC) != 2:
-            exit("E_BC must be two values [0, 0] for reflective, [val1, val2] for source")
-        if self.P_BC is not None and len(self.P_BC) != 2:
-            exit("If set, P_BC must be two values (left and right)")
+        # Hydro boundary conditions
+        if self.hydro_L is None or self.hydro_L not in ['u', 'P']:
+            exit("Need to specify u or P for hydro_L")
+        if self.hydro_L is 'p' and not isScalar(self.hydro_L_val):
+            exit("With hydro_L = P, hydro_L_val must be a scalar")
+        if self.hydro_R is None or self.hydro_R not in ['u', 'P']:
+            exit("Need to specify u or P for hydro_R")
+        if self.hydro_R is 'p' and not isScalar(self.hydro_R_val):
+            exit("With hydro_R = P, hydro_R_val must be a scalar")
+
+        # Radiation boundary conditions
+        if self.rad_L is None or self.rad_L not in ['source', 'reflective']:
+            exit("Need to specify source or reflective for rad_L")
+        if self.rad_L is 'source' and not isScalar(self.rad_L_val):
+            exit("With rad_L = source, rad_L_val must be a scalar")
+        if self.rad_L is 'reflective' and self.rad_L_val is not None:
+            exit("rad_L_val should not be specified with rad_L = reflective")
+        if self.rad_R is None or self.rad_R not in ['source', 'reflective']:
+            exit("Need to specify source or reflective for rad_R")
+        if self.rad_R is 'source' and not isScalar(self.rad_R_val):
+            exit("With rad_R = source, rad_R_val must be a scalar")
+        if self.rad_R is 'reflective' and self.rad_R_val is not None:
+            exit("rad_R_val should not be specified with rad_R = reflective")

@@ -74,7 +74,7 @@ class LagrangianRadiation:
         self.nu /= C_v + dt * kappa_a * c * 2 *a * T_old**3
 
         for i in range(0, self.geo.N):
-            self.xi[i] = -P_old[i] * (A_old[i+1] * self.u_k[i+1] - A_old[i] * self.u_k[i]) 
+            self.xi[i] = -P_old[i] * (A_old[i+1] * self.u_k[i+1] - A_old[i] * self.u_k[i])
 
     def assembleInnerCells(self, dt):
 
@@ -108,7 +108,7 @@ class LagrangianRadiation:
             denom1 = 3 * (rho_k[i] * dr_k[i] * kappa_t[i+1] + rho_k[i+1] * dr_k[i+1] * kappa_t[i+1])
             denom2 = 3 * (rho_k[i-1] * dr_k[i-1] * kappa_t[i] + rho_k[i] * dr_k[i] * kappa_t[i])
 
-            diag[i] += m[i] / (dt * rho[i]) + A_k[i+1] * c / denom1 + A_k[i] * c / denom2    
+            diag[i] += m[i] / (dt * rho[i]) + A_k[i+1] * c / denom1 + A_k[i] * c / denom2
             diag[i] += m[i] / 2 * (1 - nu[i]) * m[i] * c * kappa_a[i]
 
             upperdiag[i] = - A_k[i+1] * c / denom1
@@ -147,9 +147,9 @@ class LagrangianRadiation:
 
         denom1 = 3 * (rho_k[0] * dr_k[0] * kappa_t[1] + rho_k[1] * dr_k[1] * kappa_t[1])
 
-        if self.input.E_BC is None:            
+        if self.input.E_BC is None:
 
-            self.diag[0] += m[0] / (dt * rho[0]) + A_k[1] * c / denom1    
+            self.diag[0] += m[0] / (dt * rho[0]) + A_k[1] * c / denom1
             self.diag[0] += m[0] / 2 * (1 - nu[0]) * c * kappa_a[0]
 
             self.upperdiag[0] = - A_k[1] * c / denom1
@@ -177,9 +177,9 @@ class LagrangianRadiation:
             self.rhs[0] += (- m[0] / (dt * rho_old[0])  \
                             - m[0] / 2 * kappa_a[0] * c * (1 - nu[0]) \
                             - 1 / 3 * (A_old[1] * u_k[1] - A_old[0] * u_k[0]))*E_old[0]
-            self.rhs[0] += nu[0] * xi[0] \
-            self.rhs[0] += c / denom1 * (E_old[1] - E_old[0]) \
-            self.rhs[0] += - A_k[0] * 2 * c / denom2 * E_old[0] \
+            self.rhs[0] += nu[0] * xi[0]
+            self.rhs[0] += c / denom1 * (E_old[1] - E_old[0])
+            self.rhs[0] += - A_k[0] * 2 * c / denom2 * E_old[0]
             self.rhs[0] += A_k[0] * 2 * c / denom2 * E_left
 
     def applyRightBoundary(self, dt):
@@ -209,8 +209,8 @@ class LagrangianRadiation:
         denom2 = 3 * (rho_k[N-2] * dr_k[N-2] * kappa_t[N-1] + rho_k[N-1] * dr_k[N-1] * kappa_t[N-1])
 
         if self.input.E_BC is None:
-            
-            diag[N-1] += m[N-1] / (dt * rho[N-1]) + A_k[N-1] * c / denom2    
+
+            diag[N-1] += m[N-1] / (dt * rho[N-1]) + A_k[N-1] * c / denom2
             diag[N-1] += m[N-1] / 2 * (1 - nu[N-1]) * m[N-1] * c * kappa_a[N-1]
 
             lowerdiag[N-2] = - A_k[N-1] * c / denom2
@@ -218,7 +218,7 @@ class LagrangianRadiation:
             rhs[N-1] += (- m[N-1] / (dt * rho_old[N-1])  \
                         - m[N-1] / 2 * kappa_a[N-1] * c * (1 - nu[N-1]) \
                         - 1 / 3 * (A_old[N] * u_k[N] - A_old[N-1] * u_k[N-1]))*E_old[N-1]
-            rhs[N-1] += nu[N-1] * xi[N-1] 
+            rhs[N-1] += nu[N-1] * xi[N-1]
             rhs[N-1] += - A_k[N-1] * c / denom2 * (E_old[N-1] - E_old[N-2])
         else:
 
@@ -228,7 +228,7 @@ class LagrangianRadiation:
 
             denom1 = 3 * rho_k[N-1] * dr_k[N-1] * kappa_right + 4
 
-            diag[N-1] += m[N-1] / (dt * rho[N-1]) + A_k[N] * c / denom1 + A_k[N-1] * c / denom2     
+            diag[N-1] += m[N-1] / (dt * rho[N-1]) + A_k[N] * c / denom1 + A_k[N-1] * c / denom2
             diag[N-1] += m[N-1] / 2 * (1 - nu[N-1]) * m[N-1] * c * kappa_a[N-1]
 
             lowerdiag[N-2] = - A_k[N-1] * c / denom2
@@ -276,7 +276,3 @@ class LagrangianRadiation:
             self.fields.e_p = e_old + increment
         else:
             self.fields.e = e_old + increment
-
-
-        
-

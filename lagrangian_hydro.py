@@ -9,10 +9,6 @@ class LagrangianHydro:
         self.mat = rp.mat
         self.fields = rp.fields
 
-        # Easy access to boundary conditions
-        self.constrain_u = self.input.constrain_u
-        self.P_BC = self.input.P_BC
-
     # Solve for velocities (Eqs. 14 and 24)
     def solveVelocity(self, dt, predictor):
         u_old = self.fields.u_old
@@ -28,16 +24,23 @@ class LagrangianHydro:
             E = (self.fields.E_old + self.fields.E_p) / 2
             u = self.fields.u
 
-        # Velocity BC, set u at left and u at right explicitly
-        if self.constrain_u:
-            u[0], u[-1] = self.fields.u_BC
+        # Compute these if a pressure BC exists
+        if self.input.hydro_L == 'P' or self.input.hydro_R == 'P':
+            E_L, E_R = self.computeE_BCs(predictor)
+
+        # Velocity BC at left
+        if self.input.hydro_L == 'u':
+            u[0] = self.fields.u_L
+        # Pressure BC at left (Eq. 37)
+        else:
+            P_L = self.fields.P_L
+            u[0] = u_old[0] - A[0] * dt / m_half[0] * (P[0] - P_L + (E[0] - E_L) / 3)
+        # Velocity BC at right
+        if self.input.hydro_R == 'u':
+            u[-1] = self.fields.u_R
         # Pressure BC, use Eqs. 37 and 38
         else:
-            P_L, P_R = self.fields.P_BC
-            E_L, E_R = self.computeE_BCs(E)
-            # Left cell
-            u[0] = u_old[0] - A[0] * dt / m_half[0] * (P[0] - P_L + (E[0] - E_L) / 3)
-            # Right cell
+            P_R = self.fields.P_R
             u[-1] = u_old[-1] - A[-1] * dt / m_half[-1] * (P[-1] - P_R + (E[-1] - E_R) / 3)
 
         # Sweep to the right for each interior median mesh cell
@@ -59,14 +62,25 @@ class LagrangianHydro:
             dr = (self.fields.dr_old + self.fields.dr_p) / 2
             E = (self.fields.E_old + self.fields.E_p) / 2
         self.mat.recomputeKappa_t(T)
+        kappa_t = self.mat.kappa_t
 
-        # Boundary values of E ([0,0] for reflective, [val1,val2] for source)
-        E_bL, E_bR = self.input.E_BC
+        # Reflective condition at left, get from E_1
+        if self.fields.E_L is None:
+            E_bL = E[0]
+        # Source condition at left
+        else:
+            E_bL = self.fields.E_L
+        # Reflective condition at right, get from E_N+1/2
+        if self.fields.E_R is None:
+            E_bR = E[-1]
+        # Source condition at right
+        else:
+            E_bR = self.fields.E_R
 
-        # E_1/2 and E_N+1/2 from Eqs. 39 and 40
+        # E_1/2 and E_N+1/2 (Eqs. 39 and 40)
         weight = 3 * rho[0] * dr[0] * kappa_t[0]
         E_L = (weight * E_bL + 4 * E[0]) / (weight + 4)
         weight = 3 * rho[-1] * dr[-1] * kappa_t[-1]
-        E_R = (weight * E_br + 4 * E[-1]) / (weight + 4)
+        E_R = (weight * E_bR + 4 * E[-1]) / (weight + 4)
 
         return E_L, E_R

@@ -21,7 +21,8 @@ class Materials:
         self.kappa_func = lambda T: k1 / (k2 * T**n + k3)
         # Absorption opacity (defined on spatial cells)
         self.kappa_a = np.zeros(self.N)
-        self.kappa_s = np.kappa_s
+        # Scattering opacity (constant)
+        self.kappa_s = self.input.kappa_s
         # Absorption opacity at T_1/2 (defined on cell edges, Eq. 19)
         self.kappa_t = np.zeros(self.N + 1)
         # Container for masses
