@@ -2,9 +2,10 @@ import numpy as np
 from scipy.sparse import spdiags
 from scipy.sparse.linalg import spsolve
 
-
 class LagrangianRadiationCorrector:
+    
     def __init__(self, rp):
+
         self.rp = rp
         self.input = rp.input
         self.geo = rp.geo
@@ -33,6 +34,8 @@ class LagrangianRadiationCorrector:
 
     def assembleSystem(self, dt):
 
+        self.reinitObjects()
+
         self.computeAuxiliaryFields(dt)
 
         self.assembleInnerCells(dt)
@@ -40,6 +43,13 @@ class LagrangianRadiationCorrector:
         self.applyLeftBoundary(dt)
 
         self.applyRightBoundary(dt)
+
+    def reinitObjects(self):
+
+        self.diag = np.zeros(self.geo.N)
+        self.lowerdiag = np.zeros(self.geo.N-1)
+        self.upperdiag = np.zeros(self.geo.N-1)
+        self.rhs = np.zeros(self.geo.N)
 
     def computeAuxiliaryFields(self, dt):
 
@@ -172,7 +182,7 @@ class LagrangianRadiationCorrector:
 
             self.rhs[0] += (- m[0] / (dt * rho_old[0])  \
                             - m[0] / 2 * kappa_a[0] * c * (1 - nu[0])) * E_old[0]
-            self.rhs[0] += - 1 / 3 * (A_pk[1] * u_k[1] - A_pk[0] * u_k[0])) * E_pk[0]
+            self.rhs[0] += - 1 / 3 * (A_pk[1] * u_k[1] - A_pk[0] * u_k[0]) * E_pk[0]
             self.rhs[0] += m[0] * kappa_a[0] * c * (1 - nu[0]) * a * T4_pk[0]**4
             self.rhs[0] += nu[0] * xi[0]
             self.rhs[0] += A_k[1] * c / denom1 * (E_old[1] - E_old[0])
@@ -193,7 +203,7 @@ class LagrangianRadiationCorrector:
 
             self.rhs[0] += (- m[0] / (dt * rho_old[0])  \
                             - m[0] / 2 * kappa_a[0] * c * (1 - nu[0])) * E_old[0]
-            self.rhs[0] += - 1 / 3 * (A_pk[1] * u_k[1] - A_pk[0] * u_k[0])) * E_pk[0]
+            self.rhs[0] += - 1 / 3 * (A_pk[1] * u_k[1] - A_pk[0] * u_k[0]) * E_pk[0]
             self.rhs[0] += m[0] * kappa_a[0] * c * (1 - nu[0]) * a * T4_pk[0]**4
             self.rhs[0] += nu[0] * xi[0]
             self.rhs[0] += c / denom1 * (E_old[1] - E_old[0]) 
@@ -236,8 +246,8 @@ class LagrangianRadiationCorrector:
             self.lowerdiag[N-2] = - A_k[N-1] * c / denom2
 
             self.rhs[N-1] += (- m[N-1] / (dt * rho_old[N-1])  \
-                        - m[N-1] / 2 * kappa_a[N-1] * c * (1 - nu[N-1]) * E_old[N-1]
-            self.rhs[N-1] += - 1 / 3 * (A_pk[N] * u_k[N] - A_pk[N-1] * u_k[N-1])) * E_pk[N-1]
+                              - m[N-1] / 2 * kappa_a[N-1] * c * (1 - nu[N-1])) * E_old[N-1]
+            self.rhs[N-1] += - 1 / 3 * (A_pk[N] * u_k[N] - A_pk[N-1] * u_k[N-1]) * E_pk[N-1]
             self.rhs[N-1] += m[N-1] * kappa_a[N-1] * c * (1 - nu[N-1]) * a * T4_pk[N-1]**4
             self.rhs[N-1] += nu[N-1] * xi[N-1] 
             self.rhs[N-1] += - A_k[N-1] * c / denom2 * (E_old[N-1] - E_old[N-2])
@@ -256,8 +266,8 @@ class LagrangianRadiationCorrector:
             self.lowerdiag[N-2] = - A_k[N-1] * c / denom2
 
             self.rhs[N-1] += (- m[N-1] / (dt * rho_old[N-1])  \
-                       - m[N-1] / 2 * kappa_a[N-1] * c * (1 - nu[N-1])) * *E_old[N-1]
-            self.rhs[N-1] += - 1 / 3 * (A_pk[N] * u_k[N] - A_pk[N-1] * u_k[N-1]))*E_pk[N-1]
+                              - m[N-1] / 2 * kappa_a[N-1] * c * (1 - nu[N-1])) * E_old[N-1]
+            self.rhs[N-1] += - 1 / 3 * (A_pk[N] * u_k[N] - A_pk[N-1] * u_k[N-1]) * E_pk[N-1]
             self.rhs[N-1] += nu[N-1] * xi[N-1]
             self.rhs[N-1] += - A_pk[N-1] * c / denom2 * (E_old[N-1] - E_old[N-2])
             self.rhs[N-1] += - A_pk[N] * c / denom1 * (E_old[N-1])

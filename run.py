@@ -26,3 +26,4 @@ input.rad_R_val = 0
 
 rp = RadPydro(input)
 rp.hydro.solveVelocity(5, True)
+rp.radPredictor.solveSystem(5)

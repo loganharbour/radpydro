@@ -2,7 +2,9 @@ from fields import Fields
 from geometry import SlabGeometry, CylindricalGeometry, SphericalGeometry
 from inputparameters import InputParameters
 from lagrangian_hydro import LagrangianHydro
-from lagrangian_radiation import LagrangianRadiation
+from lagrangian_radiation_predictor import LagrangianRadiationPredictor
+from lagrangian_radiation_corrector import LagrangianRadiationCorrector
+
 from materials import Materials
 
 class RadPydro:
@@ -26,5 +28,5 @@ class RadPydro:
         self.fields = Fields(self)
 
         # Initialize the radiation and hydro problems
-        self.rad = LagrangianRadiation(self)
+        self.radPredictor = LagrangianRadiationPredictor(self)
         self.hydro = LagrangianHydro(self)
