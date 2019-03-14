@@ -8,6 +8,10 @@ class Materials:
         self.geo = rp.geo
         self.N = rp.geo.N
 
+        # Speed of light [cm / sh]
+        self.c = 299.792
+        # Radiation constant [j / (cm3 kev4)]
+        self.a = self.input.a
         # Specific energy density (constant)
         self.C_v = self.input.C_v
         # Compressability coefficient (constant)
@@ -17,6 +21,7 @@ class Materials:
         self.kappa_func = lambda T: k1 / (k2 * T**n + k3)
         # Absorption opacity (defined on spatial cells)
         self.kappa_a = np.zeros(self.N)
+        self.kappa_s = np.kappa_s
         # Absorption opacity at T_1/2 (defined on cell edges, Eq. 19)
         self.kappa_t = np.zeros(self.N + 1)
         # Container for masses
@@ -46,10 +51,10 @@ class Materials:
     # Recompute kappa with a new temperature T (Eq. 19)
     def recomputeKappa_t(self, T):
         # Left cell (use T_1)
-        self.kappa_t[0] = self.kappa_func(T[0])
+        self.kappa_t[0] = self.kappa_func(T[0]) + self.kappa_s
         # Right cell (use T_N)
-        self.kappa_t[-1] = self.kappa_func(T[-1])
+        self.kappa_t[-1] = self.kappa_func(T[-1]) + self.kappa_s
         # Interior cells
         for i in range(1, self.N - 1):
             Tedge = ((T[i]**4 + T[i + 1]**4) / 2)**(1 / 4)
-            self.kappa_t[i] = self.kappa_func(Tedge)
+            self.kappa_t[i] = self.kappa_func(Tedge) + self.kappa_s
