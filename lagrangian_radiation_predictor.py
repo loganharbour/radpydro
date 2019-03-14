@@ -3,11 +3,6 @@ from scipy.sparse import spdiags
 from scipy.sparse.linalg import spsolve
 
 
-import numpy as np
-from scipy.sparse import spdiags
-from scipy.sparse.linalg import spsolve
-
-
 class LagrangianRadiationPredictor:
     def __init__(self, rp):
         self.rp = rp
@@ -29,17 +24,17 @@ class LagrangianRadiationPredictor:
         self.nu = np.zeros(self.geo.N)
         self.xi = np.zeros(self.geo.N)
 
-    def assembleSystem(self, dt):
+    def assembleSystem(self):
 
-        computeAuxiliaryFields(dt)
+        self.computeAuxiliaryFields(dt)
 
         self.assembleInnerCells(dt)
 
-        applyLeftBoundary(dt)
+        self.applyLeftBoundary(dt)
 
-        applyRightBoundary(dt)
+        self.applyRightBoundary(dt)
 
-    def computeAuxiliaryFields(self, dt):
+    def computeAuxiliaryFields(self):
 
         m = self.mat.m
         a = self.mat.a
@@ -76,7 +71,7 @@ class LagrangianRadiationPredictor:
         for i in range(0, self.geo.N):
             self.xi[i] = - P_old[i] * (A_old[i+1] * self.u_pk[i+1] - A_old[i] * self.u_pk[i]) 
 
-    def assembleInnerCells(self, dt):
+    def assembleInnerCells(self):
 
         m = self.mat.m
         a = self.mat.a
@@ -106,20 +101,20 @@ class LagrangianRadiationPredictor:
             denom1 = 3 * (rho_pk[i] * dr_pk[i] * kappa_t[i+1] + rho_pk[i+1] * dr_pk[i+1] * kappa_t[i+1])
             denom2 = 3 * (rho_pk[i-1] * dr_pk[i-1] * kappa_t[i] + rho_pk[i] * dr_pk[i] * kappa_t[i])
 
-            diag[i] += m[i] / (dt * rho_p[i]) + A_pk[i+1] * c / denom1 + A_pk[i] * c / denom2    
-            diag[i] += m[i] / 2 * (1 - nu[i]) * m[i] * c * kappa_a[i]
+            self.diag[i] += m[i] / (dt * rho_p[i]) + A_pk[i+1] * c / denom1 + A_pk[i] * c / denom2    
+            self.diag[i] += m[i] / 2 * (1 - nu[i]) * m[i] * c * kappa_a[i]
 
-            upperdiag[i] = - A_pk[i+1] * c / denom1
-            lowerdiag[i-1] = - A_pk[i] * c / denom2
+            self.upperdiag[i] = - A_pk[i+1] * c / denom1
+            self.lowerdiag[i-1] = - A_pk[i] * c / denom2
 
-            rhs[i] += (- m[i] / (dt * rho_old[i])  \
+            self.rhs[i] += (- m[i] / (dt * rho_old[i])  \
                        - m[i] / 2 * kappa_a[i] * c * (1 - nu[i]) \
                        - 1 / 3 * (A_old[i+1] * u_pk[i+1] - A_old[i] * u_pk[i]))*E_old[i]
-            rhs[i] +=  nu[i] * xi[i]
-            rhs[i] +=  A_pk[i+1] * c / denom1 * (E_old[i+1] - E_old[i])
-            rhs[i] +=  A_pk[i] * c / denom2 * (E_old[i] - E_old[i-1])
+            self.rhs[i] +=  nu[i] * xi[i]
+            self.rhs[i] +=  A_pk[i+1] * c / denom1 * (E_old[i+1] - E_old[i])
+            self.rhs[i] +=  A_pk[i] * c / denom2 * (E_old[i] - E_old[i-1])
 
-    def applyLeftBoundary(self, dt):
+    def applyLeftBoundary(self):
 
         m = self.mat.m
         a = self.mat.a
@@ -181,7 +176,7 @@ class LagrangianRadiationPredictor:
             self.rhs[0] += - A_pk[0] * 2 * c / denom2 * E_old[0] \
             self.rhs[0] += A_pk[0] * 2 * c / denom2 * E_left
 
-    def applyRightBoundary(self, dt):
+    def applyRightBoundary(self):
 
         m = self.mat.m
         a = self.mat.a
@@ -211,16 +206,16 @@ class LagrangianRadiationPredictor:
 
         if self.input.E_BC is None:
             
-            diag[N-1] += m[N-1] / (dt * rho_p[N-1]) + A_pk[N-1] * c / denom2    
-            diag[N-1] += m[N-1] / 2 * (1 - nu[N-1]) * m[N-1] * c * kappa_a[N-1]
+            self.diag[N-1] += m[N-1] / (dt * rho_p[N-1]) + A_pk[N-1] * c / denom2    
+            self.diag[N-1] += m[N-1] / 2 * (1 - nu[N-1]) * m[N-1] * c * kappa_a[N-1]
 
-            lowerdiag[N-2] = - A_pk[N-1] * c / denom2
+            self.lowerdiag[N-2] = - A_pk[N-1] * c / denom2
 
-            rhs[N-1] += (- m[N-1] / (dt * rho_old[N-1])  \
+            self.rhs[N-1] += (- m[N-1] / (dt * rho_old[N-1])  \
                         - m[N-1] / 2 * kappa_a[N-1] * c * (1 - nu[N-1]) \
                         - 1 / 3 * (A_old[N] * u_k[N] - A_old[N-1] * u_k[N-1]))*E_old[N-1]
-            rhs[N-1] += nu[N-1] * xi[N-1] 
-            rhs[N-1] += - A_pk[N-1] * c / denom2 * (E_old[N-1] - E_old[N-2])
+            self.rhs[N-1] += nu[N-1] * xi[N-1] 
+            self.rhs[N-1] += - A_pk[N-1] * c / denom2 * (E_old[N-1] - E_old[N-2])
 
         else:
 
@@ -230,26 +225,26 @@ class LagrangianRadiationPredictor:
 
             denom1 = 3 * rho_pk[N-1] * dr_pk[N-1] * kappa_right + 4
 
-            diag[N-1] += m[N-1] / (dt * rho_p[N-1]) + A_pk[N] * c / denom1 + A_pk[N-1] * c / denom2     
-            diag[N-1] += m[N-1] / 2 * (1 - nu[N-1]) * m[N-1] * c * kappa_a[N-1]
+            self.diag[N-1] += m[N-1] / (dt * rho_p[N-1]) + A_pk[N] * c / denom1 + A_pk[N-1] * c / denom2     
+            self.diag[N-1] += m[N-1] / 2 * (1 - nu[N-1]) * m[N-1] * c * kappa_a[N-1]
 
-            lowerdiag[N-2] = - A_k[N-1] * c / denom2
+            self.lowerdiag[N-2] = - A_k[N-1] * c / denom2
 
-            rhs[N-1] += (- m[N-1] / (dt * rho_old[N-1])  \
+            self.rhs[N-1] += (- m[N-1] / (dt * rho_old[N-1])  \
                        - m[N-1] / 2 * kappa_a[N-1] * c * (1 - nu[N-1]) \
                        - 1 / 3 * (A_old[N] * u_pk[N] - A_old[N-1] * u_pk[N-1]))*E_old[N-1]
-            rhs[N-1] += nu[N-1] * xi[N-1]
-            rhs[N-1] += - A_pk[N-1] * c / denom2 * (E_old[N-1] - E_old[N-2])
-            rhs[N-1] += - A_pk[N] * c / denom1 * (E_old[N-1])
-            rhs[N-1] += A_pk[N] * 2 * c * E_right / denom1
+            self.rhs[N-1] += nu[N-1] * xi[N-1]
+            self.rhs[N-1] += - A_pk[N-1] * c / denom2 * (E_old[N-1] - E_old[N-2])
+            self.rhs[N-1] += - A_pk[N] * c / denom1 * (E_old[N-1])
+            self.rhs[N-1] += A_pk[N] * 2 * c * E_right / denom1
 
-    def solveSystem(self, predictor):
+    def solveSystem(self):
 
         systemMatrix = diags([lowerdiag, diag, upperdiag], [-1, 0, 1])
 
         self.fields.E_p = spsolve(systemMatrix, rhs)
 
-    def recomputeInternalEnergy(self, dt, predictor):
+    def recomputeInternalEnergy(self, dt):
 
         m = self.mat.m
         a = self.mat.a

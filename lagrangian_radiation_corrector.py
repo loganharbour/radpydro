@@ -3,7 +3,7 @@ from scipy.sparse import spdiags
 from scipy.sparse.linalg import spsolve
 
 
-class LagrangianRadiationPredictor:
+class LagrangianRadiationCorrector:
     def __init__(self, rp):
         self.rp = rp
         self.input = rp.input
@@ -230,17 +230,17 @@ class LagrangianRadiationPredictor:
 
         if self.input.E_BC is None:
             
-            diag[N-1] += m[N-1] / (dt * rho[N-1]) + A_k[N-1] * c / denom2    
-            diag[N-1] += m[N-1] / 2 * (1 - nu[N-1]) * m[N-1] * c * kappa_a[N-1]
+            self.diag[N-1] += m[N-1] / (dt * rho[N-1]) + A_k[N-1] * c / denom2    
+            self.diag[N-1] += m[N-1] / 2 * (1 - nu[N-1]) * m[N-1] * c * kappa_a[N-1]
 
-            lowerdiag[N-2] = - A_k[N-1] * c / denom2
+            self.lowerdiag[N-2] = - A_k[N-1] * c / denom2
 
-            rhs[N-1] += (- m[N-1] / (dt * rho_old[N-1])  \
+            self.rhs[N-1] += (- m[N-1] / (dt * rho_old[N-1])  \
                         - m[N-1] / 2 * kappa_a[N-1] * c * (1 - nu[N-1]) * E_old[N-1]
-            rhs[N-1] += - 1 / 3 * (A_pk[N] * u_k[N] - A_pk[N-1] * u_k[N-1])) * E_pk[N-1]
-            rhs[N-1] += m[N-1] * kappa_a[N-1] * c * (1 - nu[N-1]) * a * T4_pk[N-1]**4
-            rhs[N-1] += nu[N-1] * xi[N-1] 
-            rhs[N-1] += - A_k[N-1] * c / denom2 * (E_old[N-1] - E_old[N-2])
+            self.rhs[N-1] += - 1 / 3 * (A_pk[N] * u_k[N] - A_pk[N-1] * u_k[N-1])) * E_pk[N-1]
+            self.rhs[N-1] += m[N-1] * kappa_a[N-1] * c * (1 - nu[N-1]) * a * T4_pk[N-1]**4
+            self.rhs[N-1] += nu[N-1] * xi[N-1] 
+            self.rhs[N-1] += - A_k[N-1] * c / denom2 * (E_old[N-1] - E_old[N-2])
 
         else:
 
@@ -250,18 +250,18 @@ class LagrangianRadiationPredictor:
 
             denom1 = 3 * rho_k[N-1] * dr_k[N-1] * kappa_right + 4
 
-            diag[N-1] += m[N-1] / (dt * rho[N-1]) + A_k[N] * c / denom1 + A_k[N-1] * c / denom2     
-            diag[N-1] += m[N-1] / 2 * (1 - nu[N-1]) * m[N-1] * c * kappa_a[N-1]
+            self.diag[N-1] += m[N-1] / (dt * rho[N-1]) + A_k[N] * c / denom1 + A_k[N-1] * c / denom2     
+            self.diag[N-1] += m[N-1] / 2 * (1 - nu[N-1]) * m[N-1] * c * kappa_a[N-1]
 
-            lowerdiag[N-2] = - A_k[N-1] * c / denom2
+            self.lowerdiag[N-2] = - A_k[N-1] * c / denom2
 
-            rhs[N-1] += (- m[N-1] / (dt * rho_old[N-1])  \
+            self.rhs[N-1] += (- m[N-1] / (dt * rho_old[N-1])  \
                        - m[N-1] / 2 * kappa_a[N-1] * c * (1 - nu[N-1])) * *E_old[N-1]
-            rhs[N-1] += - 1 / 3 * (A_pk[N] * u_k[N] - A_pk[N-1] * u_k[N-1]))*E_pk[N-1]
-            rhs[N-1] += nu[N-1] * xi[N-1]
-            rhs[N-1] += - A_pk[N-1] * c / denom2 * (E_old[N-1] - E_old[N-2])
-            rhs[N-1] += - A_pk[N] * c / denom1 * (E_old[N-1])
-            rhs[N-1] += A_pk[N] * 2 * c * E_right / denom1
+            self.rhs[N-1] += - 1 / 3 * (A_pk[N] * u_k[N] - A_pk[N-1] * u_k[N-1]))*E_pk[N-1]
+            self.rhs[N-1] += nu[N-1] * xi[N-1]
+            self.rhs[N-1] += - A_pk[N-1] * c / denom2 * (E_old[N-1] - E_old[N-2])
+            self.rhs[N-1] += - A_pk[N] * c / denom1 * (E_old[N-1])
+            self.rhs[N-1] += A_pk[N] * 2 * c * E_right / denom1
 
     def solveSystem(self):
 
