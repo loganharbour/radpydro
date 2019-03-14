@@ -23,6 +23,7 @@ class InputParameters:
         self.gamma = None
         self.a = None
         self.kappa = None
+        self.kappa_s = None
 
         # Initial conditions
         self.E = None
