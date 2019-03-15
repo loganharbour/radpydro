@@ -27,23 +27,16 @@ class Materials:
 
     # Initialize materials that require field variables to be initialized first
     def initFromFields(self, fields):
-        m = self.m
-        m_half = self.m_half
         rho_old = fields.rho_old
         V_old = self.geo.V_old
 
         # Initialize masses now that rho has been computed
-        # NOTE: Morel said this is good for now. Might correct later?
-        m = V_old * rho_old
+        self.m = V_old * rho_old
 
-        # CHECK PLS: They don't give the same results
-        print(m)
-        print(self.m)
-
-        m_half[0] = m[0] / 2 # see below Eq. 38
-        m_half[-1] = m[-1] / 2 # see below Eq. 38
+        self.m_half[0] = self.m[0] / 2 # see below Eq. 38
+        self.m_half[-1] = self.m[-1] / 2 # see below Eq. 38
         for i in range(1, self.N ):
-            m_half[i] = (V_old[i - 1] * rho_old[i - 1] + V_old[i] * rho_old[i]) / 2
+            self.m_half[i] = (V_old[i - 1] * rho_old[i - 1] + V_old[i] * rho_old[i]) / 2
 
     # Recompute kappa_a with a new temperature T (bottom of page 1 in codespec)
     def recomputeKappa_a(self, T):

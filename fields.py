@@ -101,21 +101,38 @@ class Fields:
 
     # Recmpute rho with an updated V
     def recomputeRho(self, predictor):
+        m = self.mat.m
         if predictor:
-            self.rho_p = self.mat.m / self.V_p
+            rho_new = self.rho_p
+            V_new = self.V_p
         else:
-            self.rho = self.mat.m / self.V
+            rho_new = self.rho
+            V_new = self.V
+        for i in range(self.N):
+            rho_new[i] = m[i] / V_new[i]
 
     # Recompute temperature with an updated e
     def recomputeT(self, predictor):
+        C_v = self.mat.C_v
         if predictor:
-            self.T_p = self.mat.C_v * self.e_p
+            T_new = self.T_p
+            e_new = self.e_p
         else:
-            self.T = self.mat.C_v * self.e
+            T_new = self.T
+            e_new = self.e
+        for i in range(self.N):
+            T_new[i] = C_v * e_new[i]
 
     # Recompute pressure with an updated rho and e
     def recomputeP(self, predictor):
+        gamma_minus = self.mat.gamma - 1
         if predictor:
-            self.P_p = (self.mat.gamma - 1) * self.rho_p * self.e_p
+            P_new = self.P_p
+            e_new = self.e_p
+            rho_new = self.rho_p
         else:
-            self.P = (self.mat.gamma - 1) * self.rho * self.e
+            P_new = self.P
+            e_new = self.e
+            rho_new = self.rho
+        for i in range(self.N):
+            P_new[i] = gamma_minus * rho_new[i] * e_new[i]

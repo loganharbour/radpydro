@@ -35,19 +35,28 @@ class Geometry:
         self.stepGeometry()
 
     def moveMesh(self, dt, predictor):
+        r_half_old = self.r_half_old
+        u_old = self.rp.fields.u_old
+        m = self.rp.mat.m
         if predictor:
-            u_avg = (self.rp.fields.u_p + self.rp.fields.u_old) / 2
-            self.r_half_p = self.r_half_old + u_avg * dt
-            self.recomputeGeometry(True)
-            self.rp.fields.rho_p = self.rp.mat.m / self.V_p
+            u_new = self.rp.fields.u_p
+            V_new = self.V_p
+            r_half_new = self.r_half_p
+            rho_new = self.rp.fields.rho_p
         else:
-            u_avg = (self.rp.fields.u + self.rp.fields.u_old) / 2
-            self.r_half = self.r_half_old + u_avg * dt
-            self.recomputeGeometry(False)
-            self.rp.fields.rho = self.rp.mat.m / self.V
+            u_new = self.rp.fields.u
+            V_new = self.V
+            r_half_new = self.r_half
+            rho_new = self.rp.fields.rho
 
+        # Update radii at edges
+        for i in range(self.N + 1):
+            r_half_new[i] = r_half_old + (u_new[i] + u_old[i]) / 2 * dt
         # Recompute A, V, and r using newly obtained r_half
         self.recomputeGeometry(predictor)
+        # Recompute rho
+        for i in range(self.N):
+            rho_new[i] = m[i] / V_new[i]
 
     # Recompute A, V, dr, and r using r_half_p (predictor = true) or
     # r_half (predictor = false)
@@ -92,7 +101,8 @@ class SlabGeometry(Geometry):
 
 class CylindricalGeometry(Geometry):
     def recomputeAreas(self, A, r_half):
-        A = 2 * np.pi * r_half
+        for i in range(self.N + 1):
+            A[i] = 2 * np.pi * r_half[i]
 
     def recomputeVolumes(self, V, r_half):
         for i in range(self.N):
@@ -100,7 +110,8 @@ class CylindricalGeometry(Geometry):
 
 class SphericalGeometry(Geometry):
     def recomputeAreas(self, A, r_half):
-        A = 4 * np.pi * np.square(r_half)
+        for i in range(self.N + 1):
+            A[i] = 4 * np.pi * r_half[i]**2
 
     def recomputeVolumes(self, V, r_half):
         for i in range(self.N):

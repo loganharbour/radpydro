@@ -32,7 +32,7 @@ input.maxTimeStep = 0.5
 input.T_final = 1
 
 rp = RadPydro(input)
-rp.computeTimeStep()
-rp.hydro.solveVelocity(rp.timeSteps[-1], True)
-print("Time step: " + str(rp.timeSteps[-1]))
-rp.radPredictor.solveSystem(rp.timeSteps[-1])
+# rp.computeTimeStep()
+# rp.hydro.solveVelocity(rp.timeSteps[-1], True)
+# print("Time step: " + str(rp.timeSteps[-1]))
+# rp.radPredictor.solveSystem(rp.timeSteps[-1])
