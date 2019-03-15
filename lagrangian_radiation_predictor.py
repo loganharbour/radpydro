@@ -38,8 +38,8 @@ class LagrangianRadiationPredictor:
     def computeAuxiliaryFields(self, dt):
 
         m = self.mat.m
-        a = self.mat.a
-        c = self.mat.c
+        a = self.input.a
+        c = self.input.c
         C_v = self.mat.C_v
 
         rho_old = self.fields.rho_old
@@ -75,8 +75,8 @@ class LagrangianRadiationPredictor:
     def assembleInnerCells(self, dt):
 
         m = self.mat.m
-        a = self.mat.a
-        c = self.mat.c
+        a = self.input.a
+        c = self.input.c
         C_v = self.mat.C_v
 
         rho_old = self.fields.rho_old
@@ -120,8 +120,8 @@ class LagrangianRadiationPredictor:
     def applyLeftBoundary(self, dt):
 
         m = self.mat.m
-        a = self.mat.a
-        c = self.mat.c
+        a = self.input.a
+        c = self.input.c
         C_v = self.mat.C_v
 
         rho_old = self.fields.rho_old
@@ -182,8 +182,8 @@ class LagrangianRadiationPredictor:
     def applyRightBoundary(self, dt):
 
         m = self.mat.m
-        a = self.mat.a
-        c = self.mat.c
+        a = self.input.a
+        c = self.input.c
         C_v = self.mat.C_v
 
         rho_old = self.fields.rho_old
@@ -256,8 +256,8 @@ class LagrangianRadiationPredictor:
     def recomputeInternalEnergy(self, dt):
 
         m = self.mat.m
-        a = self.mat.a
-        c = self.mat.c
+        a = self.input.a
+        c = self.input.c
         C_v = self.mat.C_v
 
         T_old = self.fields.T_old

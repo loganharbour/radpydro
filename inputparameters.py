@@ -17,9 +17,12 @@ class InputParameters:
         # Material properties
         self.C_v = None
         self.gamma = None
-        self.a = None
         self.kappa = None
         self.kappa_s = None
+
+        # Constants
+        self.a = None
+        self.c = None
 
         # Initial conditions
         self.E = None
@@ -39,6 +42,12 @@ class InputParameters:
         self.rad_L_val = None
         self.rad_R_val = None
 
+        # Iteration parameters
+        self.CoFactor = None
+        self.relEFactor = None
+        self.maxTimeStep = None
+        self.T_final = None 
+
     def checkInputs(self):
         # Geometry checks
         if (self.r_half is None):
@@ -55,12 +64,16 @@ class InputParameters:
             exit("Need to specify C_v as a scalar")
         if not isScalar(self.gamma):
             exit("Need to specify gamma as a scalar")
-        if not isScalar(self.a):
-            exit("Need to specify a as a scalar")
         if not isScalar(self.kappa_s):
             exit("Need to specify kappa_s as a scalar")
         if self.kappa is None or len(self.kappa) != 4:
             exit("Need to specify k property as a list of 4 scalars (1, 2, 3, n)")
+
+        # Constants
+        if not isScalar(self.a):
+            exit("Need to specify a as a scalar")
+        if not isScalar(self.c):
+        	exit("Need to specify c as a scalar")
 
         # Initial conditions
         if not callable(self.rho):
@@ -97,3 +110,14 @@ class InputParameters:
             exit("With rad_R = source, rad_R_val must be a scalar")
         if self.rad_R is 'reflective' and self.rad_R_val is not None:
             exit("rad_R_val should not be specified with rad_R = reflective")
+
+        # Iteration parameters
+        if not isScalar(self.CoFactor):
+            exit("Need to specify a positive Courant factor")
+        if not isScalar(self.relEFactor):
+            exit("Need to specify a maximum relative radiative energy change")
+        if not isScalar(self.maxTimeStep):
+            exit("Need to specify a maximum time step (must be lower than T_final)")
+        if not isScalar(self.T_final):
+            exit("Need to specify the end time of the iteration")
+

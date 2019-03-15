@@ -8,10 +8,6 @@ class Materials:
         self.geo = rp.geo
         self.N = rp.geo.N
 
-        # Speed of light [cm / sh]
-        self.c = 299.792
-        # Radiation constant [j / (cm3 kev4)]
-        self.a = self.input.a
         # Specific energy density (constant)
         self.C_v = self.input.C_v
         # Compressability coefficient (constant)
@@ -39,15 +35,20 @@ class Materials:
         # Initialize masses now that rho has been computed
         # NOTE: Morel said this is good for now. Might correct later?
         m = V_old * rho_old
+
+        # CHECK PLS: They don't give the same results
+        print(m)
+        print(self.m)
+
         m_half[0] = m[0] / 2 # see below Eq. 38
         m_half[-1] = m[-1] / 2 # see below Eq. 38
-        for i in range(1, self.N - 1):
+        for i in range(1, self.N ):
             m_half[i] = (V_old[i - 1] * rho_old[i - 1] + V_old[i] * rho_old[i]) / 2
 
     # Recompute kappa_a with a new temperature T (bottom of page 1 in codespec)
     def recomputeKappa_a(self, T):
         for i in range(self.N):
-            self.kappa_a = self.kappa_func(T[i])
+            self.kappa_a[i] = self.kappa_func(T[i])
 
     # Recompute kappa with a new temperature T (Eq. 19)
     def recomputeKappa_t(self, T):
