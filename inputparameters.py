@@ -62,8 +62,8 @@ class InputParameters:
         # Material properties
         if not isScalar(self.C_v):
             exit("Need to specify C_v as a scalar")
-        if not isScalar(self.gamma):
-            exit("Need to specify gamma as a scalar")
+        if not isScalar(self.gamma) or self.gamma <=1.0:
+            exit("Need to specify gamma as a scalar larger than 1.0")
         if not isScalar(self.kappa_s):
             exit("Need to specify kappa_s as a scalar")
         if self.kappa is None or len(self.kappa) != 4:

@@ -35,7 +35,7 @@ class Materials:
 
         self.m_half[0] = self.m[0] / 2 # see below Eq. 38
         self.m_half[-1] = self.m[-1] / 2 # see below Eq. 38
-        for i in range(1, self.N ):
+        for i in range(1, self.N):
             self.m_half[i] = (V_old[i - 1] * rho_old[i - 1] + V_old[i] * rho_old[i]) / 2
 
     # Recompute kappa_a with a new temperature T (bottom of page 1 in codespec)
@@ -50,6 +50,6 @@ class Materials:
         # Right cell (use T_N)
         self.kappa_t[-1] = self.kappa_func(T[-1]) + self.kappa_s
         # Interior cells
-        for i in range(1, self.N - 1):
-            Tedge = ((T[i]**4 + T[i + 1]**4) / 2)**(1 / 4)
+        for i in range(1, self.N):
+            Tedge = ((T[i - 1]**4 + T[i]**4) / 2)**(1 / 4)
             self.kappa_t[i] = self.kappa_func(Tedge) + self.kappa_s

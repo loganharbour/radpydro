@@ -43,6 +43,7 @@ class RadPydro:
         u = self.fields.u
         F_c = self.input.CoFactor
         relEFactor = self.input.relEFactor
+
         c_s = (self.mat.gamma * self.fields.P / self.fields.rho)**(1 / 2)
 
         E_k = (self.fields.E + self.fields.E_old) / 2
@@ -62,6 +63,8 @@ class RadPydro:
         dt_cs = min(dr * F_c / c_s)
 
         self.timeSteps.append(min(self.input.maxTimeStep, dt_E, dt_u, dt_cs))
+
+        print('Computed time step size: ' + str(self.timeSteps[-1]))
 
 
 

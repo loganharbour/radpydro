@@ -6,7 +6,7 @@ input = InputParameters()
 input.geometry = 'cylindrical'
 input.r_half = np.linspace(0, 5, num=6)
 input.C_v = 1.0
-input.gamma = 1.0
+input.gamma = 1.5
 input.kappa = [1, 1, 1, 1]
 input.kappa_s = 1
 input.a = 0.01372 # [j / (cm3 kev4)]
@@ -32,7 +32,6 @@ input.maxTimeStep = 0.5
 input.T_final = 1
 
 rp = RadPydro(input)
-# rp.computeTimeStep()
-# rp.hydro.solveVelocity(rp.timeSteps[-1], True)
-# print("Time step: " + str(rp.timeSteps[-1]))
-# rp.radPredictor.solveSystem(rp.timeSteps[-1])
+rp.computeTimeStep()
+rp.hydro.solveVelocity(rp.timeSteps[-1], True)
+rp.radPredictor.solveSystem(rp.timeSteps[-1])

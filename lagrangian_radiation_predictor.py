@@ -1,5 +1,5 @@
 import numpy as np
-from scipy.sparse import spdiags
+from scipy.sparse import diags
 from scipy.sparse.linalg import spsolve
 
 class LagrangianRadiationPredictor:
@@ -129,10 +129,10 @@ class LagrangianRadiationPredictor:
         E_old = self.fields.E_old
         T_old = self.fields.T_old
 
-        rho_pk = self.rho_k
-        dr_pk = self.dr_k
-        u_pk = self.u_k
-        A_pk = self.A_k
+        rho_pk = self.rho_pk
+        dr_pk = self.dr_pk
+        u_pk = self.u_pk
+        A_pk = self.A_pk
 
         rho_p = self.fields.rho_p
 
@@ -144,7 +144,7 @@ class LagrangianRadiationPredictor:
 
         denom1 = 3 * (rho_pk[0] * dr_pk[0] * kappa_t[1] + rho_pk[1] * dr_pk[1] * kappa_t[1])
 
-        if self.input.E_BC is None:            
+        if self.input.rad_L is 'reflective':            
 
             self.diag[0] += m[0] / (dt * rho_p[0]) + A_pk[1] * c / denom1    
             self.diag[0] += m[0] / 2 * (1 - nu[0]) * c * kappa_a[0]
@@ -159,11 +159,11 @@ class LagrangianRadiationPredictor:
 
         else:
 
-            E_left = self.input.E_BC[0]
+            E_left = self.input.rad_L_val
             T_left = ((1 / a * E_left + T_old[0]**4) / 2)**(1 / 4)
             kappa_left = self.mat.kappa_func(T_left) + self.mat.kappa_s
 
-            denom2 = 3 * rho_k[0] * dr_k [0] * kappa_left + 4
+            denom2 = 3 * rho_pk[0] * dr_pk [0] * kappa_left + 4
 
             self.diag[0] += m[0] / (dt * rho_p[0]) + A_pk[1] * c / denom1
             self.diag[0] += A_pk[0] * c / denom2
@@ -192,10 +192,10 @@ class LagrangianRadiationPredictor:
         T_old = self.fields.T_old
         p_old = self.fields.P_old
 
-        rho_k = self.rho_k
-        dr_k = self.dr_k
-        u_k = self.u_k
-        A_k = self.A_k
+        rho_pk = self.rho_pk
+        dr_pk = self.dr_pk
+        u_pk = self.u_pk
+        A_pk = self.A_pk
 
         rho_p = self.fields.rho_p
 
@@ -209,7 +209,7 @@ class LagrangianRadiationPredictor:
 
         denom2 = 3 * (rho_pk[N-2] * dr_pk[N-2] * kappa_t[N-1] + rho_pk[N-1] * dr_pk[N-1] * kappa_t[N-1])
 
-        if self.input.E_BC is None:
+        if self.input.rad_R is 'reflective':  
             
             self.diag[N-1] += m[N-1] / (dt * rho_p[N-1]) + A_pk[N-1] * c / denom2    
             self.diag[N-1] += m[N-1] / 2 * (1 - nu[N-1]) * m[N-1] * c * kappa_a[N-1]
@@ -224,7 +224,7 @@ class LagrangianRadiationPredictor:
 
         else:
 
-            E_right = self.input.E_BC[1]
+            E_right = self.input.rad_R_val
             T_right = ((1 / a * E_right + T_old[N-1]**4) / 2)**(1 / 4)
             kappa_right = self.mat.kappa_func(T_right) + self.mat.kappa_s
 
@@ -233,7 +233,7 @@ class LagrangianRadiationPredictor:
             self.diag[N-1] += m[N-1] / (dt * rho_p[N-1]) + A_pk[N] * c / denom1 + A_pk[N-1] * c / denom2     
             self.diag[N-1] += m[N-1] / 2 * (1 - nu[N-1]) * m[N-1] * c * kappa_a[N-1]
 
-            self.lowerdiag[N-2] = - A_k[N-1] * c / denom2
+            self.lowerdiag[N-2] = - A_pk[N-1] * c / denom2
 
             self.rhs[N-1] += (- m[N-1] / (dt * rho_old[N-1])  \
                        - m[N-1] / 2 * kappa_a[N-1] * c * (1 - nu[N-1]) \
@@ -247,9 +247,12 @@ class LagrangianRadiationPredictor:
 
         self.assembleSystem(dt)
 
-        systemMatrix = diags([lowerdiag, diag, upperdiag], [-1, 0, 1])
+        data = np.array([self.lowerdiag, self.diag, self.upperdiag])
+        diags = np.array([-1, 0, 1])
 
-        self.fields.E_p = spsolve(systemMatrix, rhs)
+        systemMatrix = diags(data, diags)
+
+        self.fields.E_p = spsolve(systemMatrix, self.rhs)
 
         self.recomputeInternalEnergy(dt)
 
