@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.sparse import diags
+from scipy.sparse import spdiags
 from scipy.sparse.linalg import spsolve
+from scipy.linalg import solve_banded
 
 class LagrangianRadiationPredictor:
 
@@ -13,8 +15,8 @@ class LagrangianRadiationPredictor:
         self.fields = rp.fields
 
         self.diag = np.zeros(self.geo.N)
-        self.lowerdiag = np.zeros(self.geo.N-1)
-        self.upperdiag = np.zeros(self.geo.N-1)
+        self.lowerdiag = np.zeros(self.geo.N)
+        self.upperdiag = np.zeros(self.geo.N)
         self.rhs = np.zeros(self.geo.N)
 
         self.rho_pk = np.zeros(self.geo.N)
@@ -107,7 +109,7 @@ class LagrangianRadiationPredictor:
             self.diag[i] += m[i] / (dt * rho_p[i]) + A_pk[i+1] * c / denom1 + A_pk[i] * c / denom2    
             self.diag[i] += m[i] / 2 * (1 - nu[i]) * m[i] * c * kappa_a[i]
 
-            self.upperdiag[i] = - A_pk[i+1] * c / denom1
+            self.upperdiag[i+1] = - A_pk[i+1] * c / denom1
             self.lowerdiag[i-1] = - A_pk[i] * c / denom2
 
             self.rhs[i] += (- m[i] / (dt * rho_old[i])  \
@@ -149,7 +151,7 @@ class LagrangianRadiationPredictor:
             self.diag[0] += m[0] / (dt * rho_p[0]) + A_pk[1] * c / denom1    
             self.diag[0] += m[0] / 2 * (1 - nu[0]) * c * kappa_a[0]
 
-            self.upperdiag[0] = - A_pk[1] * c / denom1
+            self.upperdiag[1] = - A_pk[1] * c / denom1
 
             self.rhs[0] += (- m[0] / (dt * rho_old[0])  \
                            - m[0] / 2 * kappa_a[0] * c * (1 - nu[0]) \
@@ -169,7 +171,7 @@ class LagrangianRadiationPredictor:
             self.diag[0] += A_pk[0] * c / denom2
             self.diag[0] += m[0] / 2 * (1 - nu[0]) * c * kappa_a[0]
 
-            self.upperdiag[0] = - A_pk[1] * c / denom1
+            self.upperdiag[1] = - A_pk[1] * c / denom1
 
             self.rhs[0] += (- m[0] / (dt * rho_old[0])  \
                             - m[0] / 2 * kappa_a[0] * c * (1 - nu[0]) \
@@ -250,7 +252,7 @@ class LagrangianRadiationPredictor:
         data = np.array([self.lowerdiag, self.diag, self.upperdiag])
         diags = np.array([-1, 0, 1])
 
-        systemMatrix = diags(data, diags)
+        systemMatrix = spdiags(data, diags, self.geo.N, self.geo.N, format = 'csr')
 
         self.fields.E_p = spsolve(systemMatrix, self.rhs)
 
