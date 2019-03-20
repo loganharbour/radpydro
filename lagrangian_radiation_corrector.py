@@ -13,8 +13,8 @@ class LagrangianRadiationCorrector:
         self.fields = rp.fields
 
         self.diag = np.zeros(self.geo.N)
-        self.lowerdiag = np.zeros(self.geo.N-1)
-        self.upperdiag = np.zeros(self.geo.N-1)
+        self.lowerdiag = np.zeros(self.geo.N)
+        self.upperdiag = np.zeros(self.geo.N)
         self.rhs = np.zeros(self.geo.N)
 
         self.rho_k = np.zeros(self.geo.N)
@@ -27,14 +27,12 @@ class LagrangianRadiationCorrector:
         self.T_pk = np.zeros(self.geo.N)
         self.T3_pk = np.zeros(self.geo.N)
         self.T4_pk = np.zeros(self.geo.N)
-        self.E_pk = np.zeros(self.goe.N)
+        self.E_pk = np.zeros(self.geo.N)
 
         self.nu = np.zeros(self.geo.N)
         self.xi = np.zeros(self.geo.N)
 
     def assembleSystem(self, dt):
-
-        self.reinitObjects()
 
         self.computeAuxiliaryFields(dt)
 
@@ -44,18 +42,11 @@ class LagrangianRadiationCorrector:
 
         self.applyRightBoundary(dt)
 
-    def reinitObjects(self):
-
-        self.diag = np.zeros(self.geo.N)
-        self.lowerdiag = np.zeros(self.geo.N-1)
-        self.upperdiag = np.zeros(self.geo.N-1)
-        self.rhs = np.zeros(self.geo.N)
-
     def computeAuxiliaryFields(self, dt):
 
         m = self.mat.m
-        a = self.mat.a
-        c = self.mat.c
+        a = self.input.a
+        c = self.input.c
         C_v = self.mat.C_v
 
         rho_old = self.fields.rho_old
@@ -64,6 +55,7 @@ class LagrangianRadiationCorrector:
         A_old = self.geo.A_old
         P_old = self.fields.P_old
         T_old = self.fields.T_old
+        E_old = self.fields.E_old
 
         rho = self.fields.rho
         dr = self.geo.dr
@@ -93,8 +85,8 @@ class LagrangianRadiationCorrector:
         kappa_t = self.mat.kappa_t
         kappa_a = self.mat.kappa_a
 
-        self.nu = dt * kappa_a * c * 2 * a * T3_pk**3
-        self.nu /= C_v + dt * kappa_a * c * 2 *a * T3_pk**3
+        self.nu = dt * kappa_a * c * 2 * a * self.T3_pk**3
+        self.nu /= C_v + dt * kappa_a * c * 2 *a * self.T3_pk**3
 
         for i in range(0, self.geo.N):
             self.xi[i] = - m[i] / dt * (self.fields.e_p[i] - self.fields.e_old[i])
@@ -103,8 +95,8 @@ class LagrangianRadiationCorrector:
     def assembleInnerCells(self, dt):
 
         m = self.mat.m
-        a = self.mat.a
-        c = self.mat.c
+        a = self.input.a
+        c = self.input.c
         C_v = self.mat.C_v
 
         rho_old = self.fields.rho_old
@@ -117,6 +109,7 @@ class LagrangianRadiationCorrector:
 
         rho = self.fields.rho
 
+        A_pk = self.A_pk
         E_pk = self.E_pk
         T4_pk = self.T4_pk
 
@@ -126,6 +119,8 @@ class LagrangianRadiationCorrector:
         nu = self.nu
         xi = self.xi
 
+        N = self.geo.N
+
         for i in range(1, N-1):
 
             denom1 = 3 * (rho_k[i] * dr_k[i] * kappa_t[i+1] + rho_k[i+1] * dr_k[i+1] * kappa_t[i+1])
@@ -134,11 +129,11 @@ class LagrangianRadiationCorrector:
             self.diag[i] += m[i] / (dt * rho[i]) + A_k[i+1] * c / denom1 + A_k[i] * c / denom2    
             self.diag[i] += m[i] / 2 * (1 - nu[i]) * m[i] * c * kappa_a[i]
 
-            self.upperdiag[i] = - A_k[i+1] * c / denom1
+            self.upperdiag[i+1] = - A_k[i+1] * c / denom1
             self.lowerdiag[i-1] = - A_k[i] * c / denom2
 
             self.rhs[i] += (- m[i] / (dt * rho_old[i])  \
-                       - m[i] / 2 * kappa_a[i] * c * (1 - nu[i])) * E_old[i]
+                            - m[i] / 2 * kappa_a[i] * c * (1 - nu[i])) * E_old[i]
             self.rhs[i] += - 1 / 3 * (A_pk[i+1] * u_k[i+1] - A_pk[i] * u_k[i]) * E_pk[i]
             self.rhs[i] += m[i] * kappa_a[i] * c * (1 - nu[i]) * a * T4_pk[0]**4
             self.rhs[i] += nu[i] * xi[i]
@@ -148,8 +143,8 @@ class LagrangianRadiationCorrector:
     def applyLeftBoundary(self, dt):
 
         m = self.mat.m
-        a = self.mat.a
-        c = self.mat.c
+        a = self.input.a
+        c = self.input.c
         C_v = self.mat.C_v
 
         rho_old = self.fields.rho_old
@@ -162,6 +157,7 @@ class LagrangianRadiationCorrector:
 
         rho = self.fields.rho
 
+        A_pk = self.A_pk
         E_pk = self.E_pk
         T4_pk = self.T4_pk
 
@@ -173,7 +169,7 @@ class LagrangianRadiationCorrector:
 
         denom1 = 3 * (rho_k[0] * dr_k[0] * kappa_t[1] + rho_k[1] * dr_k[1] * kappa_t[1])
 
-        if self.input.E_BC is None:            
+        if self.input.rad_L is 'reflective':            
 
             self.diag[0] += m[0] / (dt * rho[0]) + A_k[1] * c / denom1    
             self.diag[0] += m[0] / 2 * (1 - nu[0]) * c * kappa_a[0]
@@ -189,8 +185,8 @@ class LagrangianRadiationCorrector:
 
         else:
 
-            E_left = self.input.E_BC[0]
-            T_left = ((1 / a * E_left + T_pk[0]**4) / 2)**(1 / 4)
+            E_left = self.input.rad_L_val
+            T_left = ((1 / a * E_left + T4_pk[0]**4) / 2)**(1 / 4)
             kappa_left = self.mat.kappa_func(T_left) + self.mat.kappa_s
 
             denom2 = 3 * rho_k[0] * dr_k [0] * kappa_left + 4
@@ -213,8 +209,8 @@ class LagrangianRadiationCorrector:
     def applyRightBoundary(self, dt):
 
         m = self.mat.m
-        a = self.mat.a
-        c = self.mat.c
+        a = self.input.a
+        c = self.input.c
         C_v = self.mat.C_v
 
         rho_old = self.fields.rho_old
@@ -227,6 +223,7 @@ class LagrangianRadiationCorrector:
 
         rho = self.fields.rho
 
+        A_pk = self.A_pk
         E_pk = self.E_pk
         T4_pk = self.T4_pk
 
@@ -236,9 +233,11 @@ class LagrangianRadiationCorrector:
         nu = self.nu
         xi = self.xi
 
+        N = self.geo.N
+
         denom2 = 3 * (rho_k[N-2] * dr_k[N-2] * kappa_t[N-1] + rho_k[N-1] * dr_k[N-1] * kappa_t[N-1])
 
-        if self.input.E_BC is None:
+        if self.input.rad_R is 'reflective':
             
             self.diag[N-1] += m[N-1] / (dt * rho[N-1]) + A_k[N-1] * c / denom2    
             self.diag[N-1] += m[N-1] / 2 * (1 - nu[N-1]) * m[N-1] * c * kappa_a[N-1]
@@ -254,8 +253,8 @@ class LagrangianRadiationCorrector:
 
         else:
 
-            E_right = self.input.E_BC[1]
-            T_right = ((1 / a * E_right + T_old[N-1]**4) / 2)**(1 / 4)
+            E_right = self.input.rad_R_val
+            T_right = ((1 / a * E_right + T4_pk[N-1]**4) / 2)**(1 / 4)
             kappa_right = self.mat.kappa_func(T_right) + self.mat.kappa_s
 
             denom1 = 3 * rho_k[N-1] * dr_k[N-1] * kappa_right + 4
@@ -273,17 +272,24 @@ class LagrangianRadiationCorrector:
             self.rhs[N-1] += - A_pk[N] * c / denom1 * (E_old[N-1])
             self.rhs[N-1] += A_pk[N] * 2 * c * E_right / denom1
 
-    def solveSystem(self):
+    def solveSystem(self, dt):
 
-        systemMatrix = diags([lowerdiag, diag, upperdiag], [-1, 0, 1])
+        self.assembleSystem(dt)
 
-        self.fields.E = spsolve(systemMatrix, rhs)
+        data = np.array([self.lowerdiag, self.diag, self.upperdiag])
+        diags = np.array([-1, 0, 1])
+
+        systemMatrix = spdiags(data, diags, self.geo.N, self.geo.N, format = 'csr')
+
+        self.fields.E = spsolve(systemMatrix, self.rhs)
+
+        self.recomputeInternalEnergy(dt)
 
     def recomputeInternalEnergy(self, dt):
 
         m = self.mat.m
-        a = self.mat.a
-        c = self.mat.c
+        a = self.input.a
+        c = self.input.c
         C_v = self.mat.C_v
 
         T4_pk = self.T4_pk

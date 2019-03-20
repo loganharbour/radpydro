@@ -151,7 +151,7 @@ class LagrangianRadiationPredictor:
             self.diag[0] += m[0] / (dt * rho_p[0]) + A_pk[1] * c / denom1    
             self.diag[0] += m[0] / 2 * (1 - nu[0]) * c * kappa_a[0]
 
-            self.upperdiag[1] = - A_pk[1] * c / denom1
+            self.upperdiag[0] = - A_pk[1] * c / denom1
 
             self.rhs[0] += (- m[0] / (dt * rho_old[0])  \
                            - m[0] / 2 * kappa_a[0] * c * (1 - nu[0]) \
@@ -171,7 +171,7 @@ class LagrangianRadiationPredictor:
             self.diag[0] += A_pk[0] * c / denom2
             self.diag[0] += m[0] / 2 * (1 - nu[0]) * c * kappa_a[0]
 
-            self.upperdiag[1] = - A_pk[1] * c / denom1
+            self.upperdiag[0] = - A_pk[1] * c / denom1
 
             self.rhs[0] += (- m[0] / (dt * rho_old[0])  \
                             - m[0] / 2 * kappa_a[0] * c * (1 - nu[0]) \
@@ -220,7 +220,7 @@ class LagrangianRadiationPredictor:
 
             self.rhs[N-1] += (- m[N-1] / (dt * rho_old[N-1])  \
                         - m[N-1] / 2 * kappa_a[N-1] * c * (1 - nu[N-1]) \
-                        - 1 / 3 * (A_old[N] * u_k[N] - A_old[N-1] * u_k[N-1]))*E_old[N-1]
+                        - 1 / 3 * (A_old[N] * u_pk[N] - A_old[N-1] * u_pk[N-1]))*E_old[N-1]
             self.rhs[N-1] += nu[N-1] * xi[N-1] 
             self.rhs[N-1] += - A_pk[N-1] * c / denom2 * (E_old[N-1] - E_old[N-2])
 

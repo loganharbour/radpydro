@@ -34,8 +34,9 @@ class RadPydro:
         self.timeSteps = []
 
         # Initialize the radiation and hydro problems
-        self.radPredictor = LagrangianRadiationPredictor(self)
         self.hydro = LagrangianHydro(self)
+        self.radPredictor = LagrangianRadiationPredictor(self)
+        self.radCorrector = LagrangianRadiationCorrector(self)
 
     def computeTimeStep(self):
 
