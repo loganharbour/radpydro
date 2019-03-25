@@ -46,7 +46,7 @@ class InputParameters:
         self.CoFactor = None
         self.relEFactor = None
         self.maxTimeStep = None
-        self.T_final = None 
+        self.T_final = None
 
     def checkInputs(self):
         # Geometry checks
@@ -73,7 +73,7 @@ class InputParameters:
         if not isScalar(self.a):
             exit("Need to specify a as a scalar")
         if not isScalar(self.c):
-        	exit("Need to specify c as a scalar")
+            exit("Need to specify c as a scalar")
 
         # Initial conditions
         if not callable(self.rho):
@@ -120,4 +120,3 @@ class InputParameters:
             exit("Need to specify a maximum time step (must be lower than T_final)")
         if not isScalar(self.T_final):
             exit("Need to specify the end time of the iteration")
-

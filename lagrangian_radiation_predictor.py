@@ -1,6 +1,5 @@
 import numpy as np
-from scipy.sparse import diags
-from scipy.sparse import spdiags
+from scipy.sparse import diags, spdiags
 from scipy.sparse.linalg import spsolve
 from scipy.linalg import solve_banded
 
@@ -72,7 +71,7 @@ class LagrangianRadiationPredictor:
         self.nu /= C_v + dt * kappa_a * c * 2 *a * T_old**3
 
         for i in range(0, self.geo.N):
-            self.xi[i] = - P_old[i] * (A_old[i+1] * self.u_pk[i+1] - A_old[i] * self.u_pk[i]) 
+            self.xi[i] = - P_old[i] * (A_old[i+1] * self.u_pk[i+1] - A_old[i] * self.u_pk[i])
 
     def assembleInnerCells(self, dt):
 
@@ -106,7 +105,7 @@ class LagrangianRadiationPredictor:
             denom1 = 3 * (rho_pk[i] * dr_pk[i] * kappa_t[i+1] + rho_pk[i+1] * dr_pk[i+1] * kappa_t[i+1])
             denom2 = 3 * (rho_pk[i-1] * dr_pk[i-1] * kappa_t[i] + rho_pk[i] * dr_pk[i] * kappa_t[i])
 
-            self.diag[i] += m[i] / (dt * rho_p[i]) + A_pk[i+1] * c / denom1 + A_pk[i] * c / denom2    
+            self.diag[i] += m[i] / (dt * rho_p[i]) + A_pk[i+1] * c / denom1 + A_pk[i] * c / denom2
             self.diag[i] += m[i] / 2 * (1 - nu[i]) * m[i] * c * kappa_a[i]
 
             self.upperdiag[i+1] = - A_pk[i+1] * c / denom1
@@ -146,9 +145,9 @@ class LagrangianRadiationPredictor:
 
         denom1 = 3 * (rho_pk[0] * dr_pk[0] * kappa_t[1] + rho_pk[1] * dr_pk[1] * kappa_t[1])
 
-        if self.input.rad_L is 'reflective':            
+        if self.input.rad_L is 'reflective':
 
-            self.diag[0] += m[0] / (dt * rho_p[0]) + A_pk[1] * c / denom1    
+            self.diag[0] += m[0] / (dt * rho_p[0]) + A_pk[1] * c / denom1
             self.diag[0] += m[0] / 2 * (1 - nu[0]) * c * kappa_a[0]
 
             self.upperdiag[0] = - A_pk[1] * c / denom1
@@ -211,9 +210,9 @@ class LagrangianRadiationPredictor:
 
         denom2 = 3 * (rho_pk[N-2] * dr_pk[N-2] * kappa_t[N-1] + rho_pk[N-1] * dr_pk[N-1] * kappa_t[N-1])
 
-        if self.input.rad_R is 'reflective':  
-            
-            self.diag[N-1] += m[N-1] / (dt * rho_p[N-1]) + A_pk[N-1] * c / denom2    
+        if self.input.rad_R is 'reflective':
+
+            self.diag[N-1] += m[N-1] / (dt * rho_p[N-1]) + A_pk[N-1] * c / denom2
             self.diag[N-1] += m[N-1] / 2 * (1 - nu[N-1]) * m[N-1] * c * kappa_a[N-1]
 
             self.lowerdiag[N-2] = - A_pk[N-1] * c / denom2
@@ -221,7 +220,7 @@ class LagrangianRadiationPredictor:
             self.rhs[N-1] += (- m[N-1] / (dt * rho_old[N-1])  \
                         - m[N-1] / 2 * kappa_a[N-1] * c * (1 - nu[N-1]) \
                         - 1 / 3 * (A_old[N] * u_pk[N] - A_old[N-1] * u_pk[N-1]))*E_old[N-1]
-            self.rhs[N-1] += nu[N-1] * xi[N-1] 
+            self.rhs[N-1] += nu[N-1] * xi[N-1]
             self.rhs[N-1] += - A_pk[N-1] * c / denom2 * (E_old[N-1] - E_old[N-2])
 
         else:
@@ -232,7 +231,7 @@ class LagrangianRadiationPredictor:
 
             denom1 = 3 * rho_pk[N-1] * dr_pk[N-1] * kappa_right + 4
 
-            self.diag[N-1] += m[N-1] / (dt * rho_p[N-1]) + A_pk[N] * c / denom1 + A_pk[N-1] * c / denom2     
+            self.diag[N-1] += m[N-1] / (dt * rho_p[N-1]) + A_pk[N] * c / denom1 + A_pk[N-1] * c / denom2
             self.diag[N-1] += m[N-1] / 2 * (1 - nu[N-1]) * m[N-1] * c * kappa_a[N-1]
 
             self.lowerdiag[N-2] = - A_pk[N-1] * c / denom2
@@ -278,7 +277,3 @@ class LagrangianRadiationPredictor:
         increment /= m*C_v + dt * m * kappa_a * c * 2 * a * T_old**3
 
         self.fields.e_p = e_old + increment
-
-
-        
-

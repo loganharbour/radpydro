@@ -19,7 +19,7 @@ class Fields:
             else:
                 self.u_L = self.input.hydro_L_val
         else:
-            self.u_BC_L = None
+            self.u_L = None
         if self.input.hydro_R == 'u':
             if self.input.hydro_R_val == None:
                 self.u_R = self.input.u(self.geo.r_half_old[-1])

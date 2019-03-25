@@ -8,7 +8,7 @@ input.r_half = np.linspace(0, 5, num=6)
 input.C_v = 1.0
 input.gamma = 1.5
 input.kappa = [1, 1, 1, 1]
-input.kappa_s = 1 # 
+input.kappa_s = 1 #
 input.a = 0.01372 # [jerks / (cm3 kev4)]
 input.c = 299.792 # [cm / sh]
 input.E = lambda r: 1.0

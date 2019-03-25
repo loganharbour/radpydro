@@ -1,5 +1,4 @@
 import numpy as np
-from sys import exit
 
 class Geometry:
     def __init__(self, rp):

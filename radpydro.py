@@ -54,8 +54,8 @@ class RadPydro:
             dE_k = E_k
         else:
             dE_k = abs((self.fields.E + self.fields.E_old) / self.timeSteps[-1])
-      
-        u_center = np.zeros(self.geo.N)  
+
+        u_center = np.zeros(self.geo.N)
         for i in range(self.geo.N):
             u_center = (u[i] + u[i+1]) / 2
 
@@ -66,8 +66,3 @@ class RadPydro:
         self.timeSteps.append(min(self.input.maxTimeStep, dt_E, dt_u, dt_cs))
 
         print('Computed time step size: ' + str(self.timeSteps[-1]))
-
-
-
-
-
