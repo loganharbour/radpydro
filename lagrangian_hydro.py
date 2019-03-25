@@ -20,7 +20,7 @@ class LagrangianHydro:
             u = self.fields.u_p
         else:
             A = (self.geo.A_old + self.geo.A_p) / 2
-            P = (self.geo.P_old + self.geo.P_p) / 2
+            P = (self.fields.P_old + self.fields.P_p) / 2
             E = (self.fields.E_old + self.fields.E_p) / 2
             u = self.fields.u
 
