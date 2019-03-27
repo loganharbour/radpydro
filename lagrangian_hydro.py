@@ -43,7 +43,7 @@ class LagrangianHydro:
         else:
             P_R = self.fields.P_R
             coeff_R = A[-1] * dt / m_half[-1]
-            u[-1] = u_old[-1] - coeff_R * (P[-1] - P_R + (E[-1] - E_R) / 3)
+            u[-1] = u_old[-1] - coeff_R * (P_R - P[-1] + (E[-1] - E_R) / 3)
 
         # Sweep to the right for each interior median mesh cell
         for i in range(1, self.N - 1):
