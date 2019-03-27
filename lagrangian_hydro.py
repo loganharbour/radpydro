@@ -34,20 +34,21 @@ class LagrangianHydro:
         # Pressure BC at left (Eq. 37)
         else:
             P_L = self.fields.P_L
-            u[0] = u_old[0] - A[0] * dt / m_half[0] * (P[0] - P_L + (E[0] - E_L) / 3)
+            coeff_L = A[0] * dt / m_half[0]
+            u[0] = u_old[0] - coeff_L * (P[0] - P_L + (E[0] - E_L) / 3)
         # Velocity BC at right
         if self.input.hydro_R == 'u':
             u[-1] = self.fields.u_R
         # Pressure BC, use Eqs. 37 and 38
         else:
             P_R = self.fields.P_R
-            u[-1] = u_old[-1] - A[-1] * dt / m_half[-1] * (P[-1] - P_R + (E[-1] - E_R) / 3)
+            coeff_R = A[-1] * dt / m_half[-1]
+            u[-1] = u_old[-1] - coeff_R * (P[-1] - P_R + (E[-1] - E_R) / 3)
 
         # Sweep to the right for each interior median mesh cell
         for i in range(1, self.N - 1):
-            coeff = -A[i] * dt / m_half[i]
-            u[i] = u_old[i] - A[i] * dt / m_half[i] * (P[i + 1] - P[i] \
-                                                       + (E[i + 1] - E[i]) / 3)
+            coeff = A[i] * dt / m_half[i]
+            u[i] = u_old[i] - coeff * (P[i + 1] - P[i] + (E[i + 1] - E[i]) / 3)
 
     # Recompute surface intensity boundary conditions
     def computeE_BCs(self, predictor):
