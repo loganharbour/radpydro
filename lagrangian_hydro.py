@@ -60,7 +60,7 @@ class LagrangianHydro:
         else:
             T = (self.fields.T_old + self.fields.T_p) / 2
             rho = (self.fields.rho_old + self.fields.rho_p) / 2
-            dr = (self.fields.dr_old + self.fields.dr_p) / 2
+            dr = (self.geo.dr_old + self.geo.dr_p) / 2
             E = (self.fields.E_old + self.fields.E_p) / 2
         self.mat.recomputeKappa_t(T)
         kappa_t = self.mat.kappa_t
