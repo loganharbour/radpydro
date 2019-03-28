@@ -11,10 +11,10 @@ input.kappa = [1, 1, 1, 1]
 input.kappa_s = 1 #
 input.a = 0.01372 # [jerks / (cm3 kev4)]
 input.c = 299.792 # [cm / sh]
-input.E = lambda r: 0.
+input.E = lambda r: 1.
 input.rho = lambda r: 1.0
 input.T = lambda r: 273.15
-input.u = lambda r: 0.
+input.u = lambda r: 1.
 
 # Boundary conditions
 input.hydro_L = 'u'
