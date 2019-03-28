@@ -104,10 +104,10 @@ class Fields:
         m = self.mat.m
         if predictor:
             rho_new = self.rho_p
-            V_new = self.V_p
+            V_new = self.geo.V_p
         else:
             rho_new = self.rho
-            V_new = self.V
+            V_new = self.geo.V
         for i in range(self.N):
             rho_new[i] = m[i] / V_new[i]
 

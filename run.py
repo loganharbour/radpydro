@@ -33,5 +33,13 @@ input.T_final = 1
 rp = RadPydro(input)
 rp.computeTimeStep()
 rp.hydro.solveVelocity(rp.timeSteps[-1], True)
-rp.radPredictor.solveSystem(rp.timeSteps[-1])
-rp.radCorrector.solveSystem(rp.timeSteps[-1])
+rp.geo.moveMesh(rp.timeSteps[-1], True)
+rp.fields.recomputeRho(True)
+print(rp.fields.u_old, rp.fields.u_p)
+print(rp.fields.rho_old, rp.fields.rho_p)
+
+
+
+#rp.radPredictor.solveSystem(rp.timeSteps[-1])
+#rp.radCorrector.solveSystem(rp.timeSteps[-1])
+

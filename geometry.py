@@ -50,7 +50,7 @@ class Geometry:
 
         # Update radii at edges
         for i in range(self.N + 1):
-            r_half_new[i] = r_half_old + (u_new[i] + u_old[i]) / 2 * dt
+            r_half_new[i] = r_half_old[i] + (u_new[i] + u_old[i]) / 2 * dt
         # Recompute A, V, and r using newly obtained r_half
         self.recomputeGeometry(predictor)
         # Recompute rho
