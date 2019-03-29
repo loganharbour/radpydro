@@ -9,6 +9,7 @@ class Geometry:
         self.r_half = np.copy(self.input.r_half)
         self.r_half_p = np.copy(self.r_half)
         self.r_half_old = np.copy(self.r_half)
+
         # Number of cells
         self.N = self.r_half.size - 1
 
@@ -53,7 +54,7 @@ class Geometry:
             r_half_new[i] = r_half_old[i] + (u_new[i] + u_old[i]) / 2 * dt
         # Recompute A, V, and r using newly obtained r_half
         self.recomputeGeometry(predictor)
-        # Recompute rho
+        # Recompute densities
         for i in range(self.N):
             rho_new[i] = m[i] / V_new[i]
 
