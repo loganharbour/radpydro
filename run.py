@@ -4,7 +4,8 @@ import numpy as np
 
 input = InputParameters()
 input.geometry = 'slab'
-input.r_half = np.linspace(0, 5, num=6)
+input.N = 6
+input.r_half = np.linspace(0, 5, num=input.N)
 input.C_v = 1.0
 input.gamma = 1.5
 input.kappa = [1, 1, 1, 1]
@@ -56,6 +57,15 @@ print('Predictor Step Radiation Energy: ', rp.fields.E_p)
 
 print('\nInitial Pressure: ', rp.fields.P_old)
 print('\nInitial Temperature: ', rp.fields.T_old)
+
+energy = 0
+for i in range(input.N):
+    energy += 1/2 * rp.mat.m_half[i] * rp.fields.u_p[i]**2
+    energy -= 1/2 * rp.mat.m_half[i] * rp.fields.u_old[i]**2
+    if i < input.N-1:
+        energy += rp.mat.m[i] * (rp.fields.e_p[i] + rp.fields.E_p[i] / rp.fields.rho_p[i])
+        energy -= rp.mat.m[i] * (rp.fields.e_old[i] + rp.fields.E_old[i] / rp.fields.rho_old[i])
+print(energy)
 
 
 #rp.radCorrector.solveSystem(rp.timeSteps[-1])
