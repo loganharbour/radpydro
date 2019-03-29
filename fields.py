@@ -12,21 +12,24 @@ class Fields:
         self.u = self.initializeAtEdges(self.input.u)
         self.u_p = np.copy(self.u)
         self.u_old = np.copy(self.u)
-        # Set velocity BCs as necessary
-        if self.input.hydro_L == 'u':
-            if self.input.hydro_L_val == None:
-                self.u_L = self.input.u(0)
+
+        # Set left velocity BCs as necessary
+        if self.input.hydro_bL == 'u':
+            if self.input.hydro_bL_val == None:
+                self.u_bL = self.input.u(0)
             else:
-                self.u_L = self.input.hydro_L_val
+                self.u_bL = self.input.hydro_bL_val
         else:
-            self.u_L = None
-        if self.input.hydro_R == 'u':
-            if self.input.hydro_R_val == None:
-                self.u_R = self.input.u(self.geo.r_half_old[-1])
+            self.u_bL = None
+
+        # Set right velocity BCs as necessary
+        if self.input.hydro_bR == 'u':
+            if self.input.hydro_bR_val == None:
+                self.u_bR = self.input.u(self.geo.r_half_old[-1])
             else:
-                self.u_R = self.input.hydro_R_val
+                self.u_bR = self.input.hydro_bR_val
         else:
-            self.u_R = None
+            self.u_bR = None
 
         # Temperature (spatial cell centers)
         self.T = self.initializeAtCenters(self.input.T)
@@ -42,15 +45,16 @@ class Fields:
         self.P = (self.mat.gamma - 1) * self.mat.C_v * self.T * self.rho
         self.P_p = np.copy(self.P)
         self.P_old = np.copy(self.P)
+
         # Set pressure BCs as necessary
-        if self.input.hydro_L == 'P':
-            self.P_L = self.input.hydro_L_val
+        if self.input.hydro_bL == 'P':
+            self.P_bL = self.input.hydro_bL_val
         else:
-            self.P_L = None
-        if self.input.hydro_R == 'P':
-            self.P_R = self.input.hydro_R_val
+            self.P_bL = None
+        if self.input.hydro_bR == 'P':
+            self.P_bR = self.input.hydro_bR_val
         else:
-            self.P_R = None
+            self.P_bR = None
 
         # Internal energies (spatial cell centers)
         self.e = self.mat.C_v * self.T_old
@@ -62,16 +66,16 @@ class Fields:
         self.E_p = np.copy(self.E)
         self.E_old = np.copy(self.E)
         # Set E boundary conditions
-        if self.input.rad_L == 'source':
-            self.E_L = self.input.rad_L_val
+        if self.input.rad_bL == 'source':
+            self.E_bL = self.input.rad_bL_val
         else:
-            self.E_L = None
-        if self.input.rad_R == 'source':
-            self.E_R = self.input.rad_R_val
+            self.E_bL = None
+        if self.input.rad_bR == 'source':
+            self.E_bR = self.input.rad_bR_val
         else:
-            self.E_R = None
+            self.E_bR = None
 
-        # Initialize the rest of the materials that depend on field variables
+        # Init the rest of the materials that depend on field variables
         self.mat.initFromFields(self)
 
     # Copy over all new fields to old positions
@@ -82,6 +86,8 @@ class Fields:
         np.copyto(self.P_old, self.P)
         np.copyto(self.e_old, self.e)
         np.copyto(self.E_old, self.E)
+        np.copyto(self.F_L_old, self.F_L)
+        np.copyto(self.F_R_old, self.F_R)
 
     # Initialize variable with function at the spatial cell centers
     def initializeAtCenters(self, function):
@@ -99,7 +105,7 @@ class Fields:
                 values[i] = function(self.geo.r_half[i])
         return values
 
-    # Recmpute rho with an updated V
+    # Recmpute density with updated cell volumes
     def recomputeRho(self, predictor):
         m = self.mat.m
         if predictor:
@@ -111,7 +117,35 @@ class Fields:
         for i in range(self.N):
             rho_new[i] = m[i] / V_new[i]
 
-    # Recompute temperature with an updated e
+    # Recompute radiation energy with updated internal energy
+    def recomputeInternalEnergy(self, dt):
+        # Query constants for the problem
+        m = self.mat.m
+        a = self.input.a
+        c = self.input.c
+        C_v = self.mat.C_v
+
+        # Query k-1/2'th variables
+        T_old = self.T_old
+        e_old = self.e_old
+
+        # Query absorption opacities
+        kappa_a = self.mat.kappa_a
+
+        # Query parameter from radiation energy solve
+        xi = self.rp.radPredictor.xi
+
+        # Compute average of k-1/2'th and predictor radiation energy
+        E_k = (self.E_p + self.E_old) / 2
+
+        # Compute factor to be added to k-1/2'th internal energy
+        increment = dt * C_v * (m * kappa_a * c * (E_k - a * T_old**4) + xi)
+        increment /= m * C_v + dt * m * kappa_a * c * 2 * a * T_old**3
+
+        # Compute predictor internal energy
+        self.e_p = e_old + increment
+
+    # Recompute temperature with updated internal energy
     def recomputeT(self, predictor):
         C_v = self.mat.C_v
         if predictor:
@@ -123,7 +157,7 @@ class Fields:
         for i in range(self.N):
             T_new[i] = C_v * e_new[i]
 
-    # Recompute pressure with an updated rho and e
+    # Recompute pressure with updated density and internal energy
     def recomputeP(self, predictor):
         gamma_minus = self.mat.gamma - 1
         if predictor:
@@ -136,3 +170,10 @@ class Fields:
             rho_new = self.rho
         for i in range(self.N):
             P_new[i] = gamma_minus * rho_new[i] * e_new[i]
+
+    # Recompute radiation energy density
+    def recomputeE(self, dt):
+        # Compute time-averaged parameters, opacities, etc
+        self.radPredictor.computeAuxiliaryFields(dt)
+        self.radPredictor.assembleSystem(dt)
+        self.radPredictor.solveSystem(dt)
