@@ -66,17 +66,17 @@ class LagrangianHydro:
         kappa_t = self.mat.kappa_t
 
         # Reflective condition at left, get from E_1
-        if self.fields.E_L is None:
+        if self.fields.E_bL is None:
             E_bL = E[0]
         # Source condition at left
         else:
-            E_bL = self.fields.E_L
+            E_bL = self.fields.E_bL
         # Reflective condition at right, get from E_N+1/2
-        if self.fields.E_R is None:
+        if self.fields.E_bR is None:
             E_bR = E[-1]
         # Source condition at right
         else:
-            E_bR = self.fields.E_R
+            E_bR = self.fields.E_bR
 
         # E_1/2 and E_N+1/2 (Eqs. 39 and 40)
         weight = 3 * rho[0] * dr[0] * kappa_t[0]

@@ -60,8 +60,8 @@ class LagrangianRadiationPredictor:
         kappa_a = self.mat.kappa_a
 
         # parameter in radiation energy system (Eq. 20a)
-        self.nu = dt * kappa_a * c * 2 * a * T_old**3
-        self.nu /= C_v + dt * kappa_a * c * 2 *a * T_old**3
+        weight = 2 * a * c * dt * kappa_a
+        self.nu = weight * T_old**3 / (C_v + weight * T_old**3)
 
         # parameter in radiation energy system (Eq. 20b)
         for i in range(0, self.geo.N):
@@ -92,90 +92,63 @@ class LagrangianRadiationPredictor:
         nu = self.nu
         xi = self.xi
 
-        for i in range(0, N):
-            # time derivative contributions
-            self.diag[i] += m[i] / (dt * rho_p[i])
-            self.rhs[i] += m[i] / (dt * rho_p[i]) * E_old[i]
+        for i in range(N):
+            # Time derivative contributions
+            self.diag[i] += m[i] / dt * (1 / rho_p[i])
+            self.rhs[i] += m[i] / dt * (E_old[i] / rho_old[i])
 
-            # absorption contributions
+            # Absorption contributions
             self.diag[i] += m[i] * kappa_a[i] * c * (1 - nu[i]) / 2
             self.rhs[i] -= m[i] * kappa_a[i] * c * (1 - nu[i]) * E_old[i] / 2
 
-            # material emmision and nu * xi contributions
+            # Material emmision and nu * xi contributions
             self.rhs[i] += m[i] * kappa_a[i] * c * (1 - nu[i]) * a * T_old[i]**4
             self.rhs[i] += nu[i] * xi[i]
 
-            # drift term contributions
-            self.rhs[i] -= 1/3 * E_old[i] * (A_pk[i+1] * u_pk[i+1] \
-                                             - A_pk[i] * u_pk[i])
+            # Drift term contributions
+            self.rhs[i] -= 1/3 * E_old[i] * (A_old[i+1] * u_pk[i+1] - A_old[i] * u_pk[i])
 
             # if past leftmost cell
-            if (i > 0):
+            if i > 0:
                 # left edge flux coefficient
-                coeff_F_L = 2 * c / (3 * (rho_pk[i-1] * dr_pk[i-1] * kappa_t[i] \
-                                          + rho_pk[i] * dr_pk[i] * kappa_t[i]))
+                coeff_F_L = -2 * c / (3 * (rho_pk[i-1] * dr_pk[i-1] * kappa_t[i] \
+                                           + rho_pk[i] * dr_pk[i] * kappa_t[i]))
 
                 # left edge flux contributions
-                self.diag[i] += A_pk[i] * coeff_F_L / 2
-                self.lowerdiag[i-1] -= A_pk[i] * coeff_F_L / 2
-                self.rhs[i] -= A_pk[i] * coeff_F_L * E_old[i] / 2
-                self.rhs[i-1] += A_pk[i] * coeff_F_L * E_old[i-1] / 2
+                self.diag[i] -= A_pk[i] * coeff_F_L / 2
+                self.lowerdiag[i-1] += A_pk[i] * coeff_F_L / 2
+                self.rhs[i] += A_pk[i] * coeff_F_L * E_old[i] / 2
+                self.rhs[i-1] -= A_pk[i] * coeff_F_L * E_old[i-1] / 2
 
             # if before rightmost cell
-            if (i < N-1):
+            if i < N-1:
                 # right edge flux coefficient
-                coeff_F_R = 2 * c / (3 * (rho_pk[i] * dr_pk[i] * kappa_t[i+1] \
+                coeff_F_R = -2 * c / (3 * (rho_pk[i] * dr_pk[i] * kappa_t[i+1] \
                                           + rho_pk[i+1] * dr_pk[i+1] * kappa_t[i+1]))
 
                 # right edge flux contributions
-                self.diag[i] += A_pk[i+1] * coeff_F_R / 2
-                self.upperdiag[i+1] -= A_pk[i+1] * coeff_F_R / 2
-                self.rhs[i] -= A_pk[i+1] * coeff_F_R * E_old[i] / 2
-                self.rhs[i+1] += A_pk[i+1] * coeff_F_R * E_old[i+1] / 2
+                self.diag[i] -= A_pk[i+1] * coeff_F_R / 2
+                self.upperdiag[i+1] += A_pk[i+1] * coeff_F_R / 2
+                self.rhs[i] += A_pk[i+1] * coeff_F_R * E_old[i] / 2
+                self.rhs[i+1] -= A_pk[i+1] * coeff_F_R * E_old[i+1] / 2
 
-            # if on left boundary cell
-            if (i == 0):
-                if self.input.rad_L is 'source':
-                    E_L = self.input.rad_L_val
+        # Left BC handling
+        if self.input.rad_L is 'source':
+            coeff_F_L = -2 * c / (3 * rho_pk[0] * dr_pk[0] * kappa_t[0] + 4)
+            self.diag[i] -= A_pk[i] * coeff_F_L / 2
+            self.rhs[i] -= A_pk[i] * coeff_F_L * self.fields.E_bL / 2
+        elif self.input.rad_L is 'reflective':
+            pass
 
-                    # compute left bdry temp with Eq. 34
-                    T_L = ((E_L / a + T_old[i]**4) / 2)**(1/4)
-                    # compute left bdry total opacity with T_L
-                    kappa_t_L = self.mat.kappa_func(T_L) + self.mat.kappa_s
-
-                    # left bdry flux coefficient
-                    coeff_F_Lb = 2 * c / (3 * rho_pk[i] * dr_pk[i] * kappa_t_L + 4)
-
-                    # left bdry flux contributions
-                    self.diag[i] += A_pk[i] * coeff_F_Lb / 2
-                    self.rhs[i] += A_pk[i] * coeff_F_Lb * E_L / 2
-
-                elif self.input.rad_L is 'reflective':
-                    pass
-
-            # if on right boundary cell
-            if (i == N-1):
-                    if self.input.rad_R is 'source':
-                        E_R = self.input.rad_R_val
-
-                        # compute right bdry temp with Eq. 36
-                        T_R = ((E_R / a + T_old[i]**4) / 2)**(1/4)
-                        # compute right bdry total opacity with T_R
-                        kappa_t_R = self.mat.kappa_func(T_R) + self.mat.kappa_s
-
-                        # right bdry flux coefficient
-                        coeff_F_Rb = 2 * c / (3 * rho_pk[i] * dr_pk[i] * kappa_t_R + 4)
-
-                        #right bdry flux contributions
-                        self.diag[i] += A_pk[i+1] * coeff_F_Rb / 2
-                        self.rhs[i] += A_pk[i+1] * coeff_F_Rb * E_R / 2
-                        print('\n', A_pk[i+1] * coeff_F_Rb * E_R / 2)
-
-                    elif self.input.rad_R is 'reflective':
-                        pass
+        # Right BC handline
+        if self.input.rad_R is 'source':
+            coeff_F_R = 2 * c / (3 * rho_pk[-1] * dr_pk[-1] * kappa_t[-1] + 4)
+            self.diag[i] -= A_pk[i+1] * coeff_F_R / 2
+            self.rhs[i] -= A_pk[i+1] * coeff_F_R * self.fields.E_bR / 2
+        elif self.input.rad_R is 'reflective':
+            pass
 
     def solveSystem(self, dt):
-
         self.computeAuxiliaryFields(dt)
         self.assembleSystem(dt)
 
@@ -184,26 +157,3 @@ class LagrangianRadiationPredictor:
 
         systemMatrix = spdiags(data, diags, self.geo.N, self.geo.N, format = 'csr')
         self.fields.E_p = spsolve(systemMatrix, self.rhs)
-
-        self.recomputeInternalEnergy(dt)
-
-    def recomputeInternalEnergy(self, dt):
-
-        m = self.mat.m
-        a = self.input.a
-        c = self.input.c
-        C_v = self.mat.C_v
-
-        T_old = self.fields.T_old
-        e_old = self.fields.e_old
-
-        kappa_a = self.mat.kappa_a
-
-        xi = self.xi
-
-        E_k = (self.fields.E_p + self.fields.E_old) / 2
-
-        increment = dt * C_v * (m * kappa_a * c * (E_k - a * T_old**4) + xi)
-        increment /= m * C_v + dt * m * kappa_a * c * 2 * a * T_old**3
-
-        self.fields.e_p = e_old + increment

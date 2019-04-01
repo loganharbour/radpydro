@@ -19,7 +19,7 @@ class Materials:
         self.kappa_a = np.zeros(self.N)
         # Scattering opacity (constant)
         self.kappa_s = self.input.kappa_s
-        # Absorption opacity at T_1/2 (defined on cell edges, Eq. 19)
+        # Total opacity defined on cell edges (Eq. 19)
         self.kappa_t = np.zeros(self.N + 1)
         # Container for masses
         self.m = np.zeros(self.N)
@@ -45,10 +45,21 @@ class Materials:
 
     # Recompute kappa with a new temperature T (Eq. 19)
     def recomputeKappa_t(self, T):
-        # Left cell (use T_1)
-        self.kappa_t[0] = self.kappa_func(T[0]) + self.kappa_s
-        # Right cell (use T_N)
-        self.kappa_t[-1] = self.kappa_func(T[-1]) + self.kappa_s
+        a = self.input.a
+        # Left system boundary
+        if self.input.rad_L is 'source':
+            E_bL = self.input.rad_L_val
+            T_L = ((E_bL / a + T[0]**4) / 2)**(1/4)
+            self.kappa_t[0] = self.kappa_func(T_L) + self.kappa_s
+        else:
+            self.kappa_t[0] = self.kappa_func(T[0]) + self.kappa_s
+        # Right system boundary
+        if self.input.rad_R is 'source':
+            E_bR = self.input.rad_R_val
+            T_R = ((E_bR / a + T[-1]**4) / 2)**(1/4)
+            self.kappa_t[-1] = self.kappa_func(T_R) + self.kappa_s
+        else:
+            self.kappa_t[-1] = self.kappa_func(T[-1]) + self.kappa_s
         # Interior cells
         for i in range(1, self.N):
             Tedge = ((T[i - 1]**4 + T[i]**4) / 2)**(1 / 4)

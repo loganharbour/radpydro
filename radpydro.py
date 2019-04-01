@@ -65,4 +65,4 @@ class RadPydro:
 
         self.timeSteps.append(min(self.input.maxTimeStep, dt_E, dt_u, dt_cs))
 
-        print('Computed time step size: ' + str(self.timeSteps[-1]))
+        print('Computed time step size: ' + str(self.timeSteps[-1]), '\n')
