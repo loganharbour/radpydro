@@ -148,7 +148,7 @@ class LagrangianRadiationCorrector:
                 self.diag[i] -= A_k[i] * coeff_F_L / 2
                 self.lowerdiag[i-1] += A_k[i] * coeff_F_L / 2
                 self.rhs[i] += A_k[i] * coeff_F_L * E_old[i] / 2
-                self.rhs[i-1] -= A_k[i] * coeff_F_L * E_old[i-1] / 2
+                self.rhs[i] -= A_k[i] * coeff_F_L * E_old[i-1] / 2
 
             # if before rightmost cell
             if i < N-1:
@@ -160,25 +160,21 @@ class LagrangianRadiationCorrector:
                 self.diag[i] -= A_k[i+1] * coeff_F_R / 2
                 self.upperdiag[i+1] += A_k[i+1] * coeff_F_R / 2
                 self.rhs[i] += A_k[i+1] * coeff_F_R * E_old[i] / 2
-                self.rhs[i+1] -= A_k[i+1] * coeff_F_R * E_old[i+1] / 2
+                self.rhs[i] -= A_k[i+1] * coeff_F_R * E_old[i+1] / 2
 
         # Left BC handling
         if self.input.rad_L is 'source':
-            coeff_F_L = -2 * c / (3 * rho_k[0] * dr_k[0] * kappa_t[0] + 4)
-            self.diag[i] -= A_k[i] * coeff_F_L / 2
-            self.rhs[i] -= A_k[i] * coeff_F_L * self.fields.E_bL / 2
-        elif self.input.rad_L is 'reflective':
-            pass
+            coeff_F_bL = - 2 * c / (3 * rho_k[0] * dr_k[0] * kappa_t[0] + 4)
+            self.diag[0] -= A_k[0] * coeff_F_bL / 2
+            self.rhs[0] += A_k[0] * coeff_F_bL * E_old[0] / 2
+            self.rhs[0] -= A_k[0] * coeff_F_bL * self.fields.E_bL
 
         # Right BC handline
         if self.input.rad_R is 'source':
-            coeff_F_R = 2 * c / (3 * rho_k[-1] * dr_k[-1] * kappa_t[-1] + 4)
-            self.diag[i] -= A_k[i+1] * coeff_F_R / 2
-            self.rhs[i] -= A_k[i+1] * coeff_F_R * self.fields.E_bR / 2
-        elif self.input.rad_R is 'reflective':
-            pass
-
-
+            coeff_F_bR = - 2 * c / (3 * rho_k[-1] * dr_k[-1] * kappa_t[-1] + 4)
+            self.diag[-1] -= A_k[-1] * coeff_F_bR / 2
+            self.rhs[-1] += A_k[-1] * coeff_F_bR * E_old[-1] / 2
+            self.rhs[-1] -= A_k[-1] * coeff_F_bR * self.fields.E_bR 
 
     def solveSystem(self, dt):
         self.computeAuxiliaryFields(dt)

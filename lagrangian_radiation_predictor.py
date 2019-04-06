@@ -93,6 +93,7 @@ class LagrangianRadiationPredictor:
         xi = self.xi
 
         for i in range(N):
+
             # Time derivative contributions
             self.diag[i] += m[i] / dt * (1 / rho_p[i])
             self.rhs[i] += m[i] / dt * (E_old[i] / rho_old[i])
@@ -118,7 +119,7 @@ class LagrangianRadiationPredictor:
                 self.diag[i] -= A_pk[i] * coeff_F_L / 2
                 self.lowerdiag[i-1] += A_pk[i] * coeff_F_L / 2
                 self.rhs[i] += A_pk[i] * coeff_F_L * E_old[i] / 2
-                self.rhs[i-1] -= A_pk[i] * coeff_F_L * E_old[i-1] / 2
+                self.rhs[i] -= A_pk[i] * coeff_F_L * E_old[i-1] / 2
 
             # if before rightmost cell
             if i < N-1:
@@ -130,23 +131,21 @@ class LagrangianRadiationPredictor:
                 self.diag[i] -= A_pk[i+1] * coeff_F_R / 2
                 self.upperdiag[i+1] += A_pk[i+1] * coeff_F_R / 2
                 self.rhs[i] += A_pk[i+1] * coeff_F_R * E_old[i] / 2
-                self.rhs[i+1] -= A_pk[i+1] * coeff_F_R * E_old[i+1] / 2
+                self.rhs[i] -= A_pk[i+1] * coeff_F_R * E_old[i+1] / 2
 
         # Left BC handling
         if self.input.rad_L is 'source':
             coeff_F_L = -2 * c / (3 * rho_pk[0] * dr_pk[0] * kappa_t[0] + 4)
-            self.diag[i] -= A_pk[i] * coeff_F_L / 2
-            self.rhs[i] -= A_pk[i] * coeff_F_L * self.fields.E_bL / 2
-        elif self.input.rad_L is 'reflective':
-            pass
+            self.diag[0] -= A_pk[0] * coeff_F_L / 2
+            self.rhs[0] += A_pk[0] * coeff_F_L / 2 * E_old[0]
+            self.rhs[0] -= A_pk[0] * coeff_F_L * self.fields.E_bL
 
         # Right BC handline
         if self.input.rad_R is 'source':
-            coeff_F_R = 2 * c / (3 * rho_pk[-1] * dr_pk[-1] * kappa_t[-1] + 4)
-            self.diag[i] -= A_pk[i+1] * coeff_F_R / 2
-            self.rhs[i] -= A_pk[i+1] * coeff_F_R * self.fields.E_bR / 2
-        elif self.input.rad_R is 'reflective':
-            pass
+            coeff_F_R = -2 * c / (3 * rho_pk[-1] * dr_pk[-1] * kappa_t[-1] + 4)
+            self.diag[-1] -= A_pk[-1] * coeff_F_R / 2
+            self.rhs[-1] += A_pk[-1] * coeff_F_R * E_old[-1] / 2
+            self.rhs[-1] -= A_pk[-1] * coeff_F_R * self.fields.E_bR
 
     def solveSystem(self, dt):
         self.computeAuxiliaryFields(dt)
@@ -156,4 +155,5 @@ class LagrangianRadiationPredictor:
         diags = np.array([-1, 0, 1])
 
         systemMatrix = spdiags(data, diags, self.geo.N, self.geo.N, format = 'csr')
+
         self.fields.E_p = spsolve(systemMatrix, self.rhs)

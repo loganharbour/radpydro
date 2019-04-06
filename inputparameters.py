@@ -90,11 +90,11 @@ class InputParameters:
         # Hydro boundary conditions
         if self.hydro_L is None or self.hydro_L not in ['u', 'P']:
             exit("Need to specify u or P for hydro_L")
-        if self.hydro_L is 'p' and not isScalar(self.hydro_L_val):
+        if self.hydro_L is 'P' and not isScalar(self.hydro_L_val):
             exit("With hydro_L = P, hydro_L_val must be a scalar")
         if self.hydro_R is None or self.hydro_R not in ['u', 'P']:
             exit("Need to specify u or P for hydro_R")
-        if self.hydro_R is 'p' and not isScalar(self.hydro_R_val):
+        if self.hydro_R is 'P' and not isScalar(self.hydro_R_val):
             exit("With hydro_R = P, hydro_R_val must be a scalar")
 
         # Radiation boundary conditions

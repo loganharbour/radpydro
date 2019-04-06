@@ -46,9 +46,9 @@ class LagrangianHydro:
             u[-1] = u_old[-1] - coeff_R * (P_R - P[-1] + (E_R - E[-1]) / 3)
 
         # Sweep to the right for each interior median mesh cell
-        for i in range(1, self.N - 1):
+        for i in range(1, self.N):
             coeff = A[i] * dt / m_half[i]
-            u[i] = u_old[i] - coeff * (P[i + 1] - P[i] + (E[i + 1] - E[i]) / 3)
+            u[i] = u_old[i] - coeff * (P[i] - P[i-1] + (E[i] - E[i-1]) / 3)
 
     # Recompute surface intensity boundary conditions
     def computeE_BCs(self, predictor):
@@ -62,8 +62,8 @@ class LagrangianHydro:
             rho = (self.fields.rho_old + self.fields.rho_p) / 2
             dr = (self.geo.dr_old + self.geo.dr_p) / 2
             E = (self.fields.E_old + self.fields.E_p) / 2
-        self.mat.recomputeKappa_t(T)
-        kappa_t = self.mat.kappa_t
+        self.mat.recomputeKappa_a(T)
+        kappa_t_center = self.mat.kappa_a + self.mat.kappa_s
 
         # Reflective condition at left, get from E_1
         if self.fields.E_bL is None:
@@ -79,9 +79,9 @@ class LagrangianHydro:
             E_bR = self.fields.E_bR
 
         # E_1/2 and E_N+1/2 (Eqs. 39 and 40)
-        weight = 3 * rho[0] * dr[0] * kappa_t[0]
+        weight = 3 * rho[0] * dr[0] * kappa_t_center[0]
         E_L = (weight * E_bL + 4 * E[0]) / (weight + 4)
-        weight = 3 * rho[-1] * dr[-1] * kappa_t[-1]
+        weight = 3 * rho[-1] * dr[-1] * kappa_t_center[-1]
         E_R = (weight * E_bR + 4 * E[-1]) / (weight + 4)
 
         return E_L, E_R

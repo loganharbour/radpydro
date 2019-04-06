@@ -19,7 +19,11 @@ class Fields:
             if self.input.hydro_L_val == None:
                 self.u_L = self.input.u(0)
             else:
-                self.u_L = self.input.hydro_bL_val
+                self.u_L = self.input.hydro_L_val
+                self.u_IC[0] = self.u_L;
+                self.u_old[0] = self.u_L;
+                self.u_p[0] = self.u_L;
+                self.u[0] = self.u_L;
         else:
             self.u_L = None
 
@@ -29,6 +33,10 @@ class Fields:
                 self.u_R = self.input.u(self.geo.r_half_old[-1])
             else:
                 self.u_R = self.input.hydro_R_val
+                self.u_IC[-1] = self.u_R;
+                self.u_old[-1] = self.u_R;
+                self.u_p[-1] = self.u_R;
+                self.u[-1] = self.u_R;
         else:
             self.u_R = None
 
@@ -129,28 +137,33 @@ class Fields:
         C_v = self.mat.C_v
 
         if predictor:
-            e = self.e_old
+            e_old = self.e_old
             T_old = self.T_old
-            T_new = self.T_old # this is here for consistency below
-            E_k = (self.E_p + self.E_old) / 2
-            e_new = self.e_p
-            xi = self.rp.radPredictor.xi
+            E_pk = (self.E_p + self.E_old) / 2
+            xi_old = self.rp.radPredictor.xi
+            self.mat.recomputeKappa_a(T_old)
+            kappa_a_old = self.mat.kappa_a
+
+            increment = dt * C_v * (m * kappa_a_old * c * (E_pk - a * T_old**4) + xi_old)
+            increment /= m * C_v + dt * m * kappa_a_old * c * 2 * a * T_old**3
+
+            self.e_p = e_old + increment
+
         else:
-            e = self.e_p
+            e_p = self.e_p
             T_old = self.T_old
-            T_new = self.T_p
+            T_p = self.T_p
+            T_pk = (T_p + T_old) / 2
+            T_pk4 = (T_p**4 + T_old**4) / 2
             E_k = (self.E + self.E_old) / 2
-            e_new = self.e
-            xi = self.rp.radCorrector.xi
+            self.mat.recomputeKappa_a(T_pk)
+            kappa_a_pk = self.mat.kappa_a
+            xi_k = self.rp.radCorrector.xi
 
-        kappa_a = self.mat.kappa_a
-        # Compute factor to be added to k-1/2'th internal energy
-        T4 = (T_old**4 + T_new**4) / 2
-        increment = dt * C_v * (m * kappa_a * c * (E_k - a * T4) + xi)
-        increment /= m * C_v + dt * m * kappa_a * c * 2 * a * T_old**3
+            increment = dt * C_v * (m * kappa_a_pk * c * (E_k - a * T_pk4) + xi_k)
+            increment /= m * C_v + dt * m * kappa_a_pk * c * 2 * a * T_p**3
 
-        # Compute predictor internal energy
-        e_new = e + increment
+            self.e = e_p + increment
 
     # Recompute temperature with updated internal energy
     def recomputeT(self, predictor):
@@ -162,7 +175,7 @@ class Fields:
             T_new = self.T
             e_new = self.e
         for i in range(self.N):
-            T_new[i] = C_v * e_new[i]
+            T_new[i] = e_new[i] / C_v
 
     # Recompute pressure with updated density and internal energy
     def recomputeP(self, predictor):
@@ -215,26 +228,31 @@ class Fields:
         # k'th time-step and predicted k'th time-step variables
         A_k = (self.geo.A + self.geo.A_old) / 2
         A_pk = (self.geo.A_p + self.geo.A_old) / 2
+
         E_k = (self.E + self.E_old) / 2
         E_pk = (self.E_p + self.E_old) / 2
+
         rho_k = (self.rho + self.rho_old) / 2
         rho_pk = (self.rho_p + self.rho_old) / 2
+
         dr_k = (self.geo.dr + self.geo.dr_old) / 2
         dr_pk = (self.geo.dr_p + self.geo.dr_old) / 2
+
         P_pk = (self.P_p + self.P_old) / 2
+
         u_k = (self.u + self.u_old) / 2
+
         T_k = (self.T + self.T_old) / 2
-        self.mat.recomputeKappa_t(T_k)
-        kappa_t_k = self.mat.kappa_t
         T_pk = (self.T_p + self.T_old) / 2
+
+        # Recomputing kappa_t at the cell edges and cell centers
+        self.mat.recomputeKappa_t(T_pk)
+        kappa_t_pk_edge = self.mat.kappa_t
         self.mat.recomputeKappa_a(T_pk)
-        kappa_t_pk = self.mat.kappa_a + self.mat.kappa_s
+        kappa_t_pk_center = self.mat.kappa_a + self.mat.kappa_s
 
-        coeff_F_L = -2 * c / (3 * rho_k[0] * dr_k[0] * kappa_t_k[0] + 4)
-        coeff_F_R = -2 * c / (3 * rho_k[-1] * dr_k[-1] * kappa_t_k[-1] + 4)
-        coeff_E_L = 3 * rho_pk[0] * dr_pk[0] * kappa_t_pk[0]
-        coeff_E_R = 3 * rho_pk[-1] * dr_pk[-1] * kappa_t_pk[-1]
-
+        # Setting up boundary parameters for the radiation terms
+        # in the momentum equation
         if self.input.rad_L is 'source':
             E_bL_k = self.E_bL
             E_bL_pk = self.E_bL
@@ -248,21 +266,59 @@ class Fields:
             E_bR_k = E_k[-1]
             E_bR_pk = E_pk[-1]
 
+        # Computing the boundary radiation energies in the momentum
+        # equation from the parameters
+        coeff_E_L = 3 * rho_pk[0] * dr_pk[0] * kappa_t_pk_center[0]
+        coeff_E_R = 3 * rho_pk[-1] * dr_pk[-1] * kappa_t_pk_center[-1]
+
+        E_L = (coeff_E_L * E_bL_pk + 4 * E_pk[0]) / (coeff_E_L + 4)
+        E_R = (coeff_E_R * E_bR_pk + 4 * E_pk[-1]) / (coeff_E_R + 4)
+
+        # Setting up boundary parameters for the pressure boundary values
+        if self.input.hydro_L is 'P':
+            P_bL_pk = self.P_L
+        else:
+            P_bL_pk = P_pk[0] + 1 / 3 * (E_pk[0] - E_L)
+        if self.input.hydro_R is 'P':
+            P_bR_pk = self.P_R
+        else:
+            P_bR_pk = P_pk[-1] + 1 / 3 * (E_pk[-1] - E_R)
+
+        # Computing the boundary radiation fluxes (used for leakage)
+        coeff_F_L = -2 * c / (3 * rho_k[0] * dr_k[0] * kappa_t_pk_edge[0] + 4)
+        coeff_F_R = -2 * c / (3 * rho_k[-1] * dr_k[-1] * kappa_t_pk_edge[-1] + 4)
+
         F_L = coeff_F_L * (E_k[0] - E_bL_k);
-        F_R = coeff_F_R * (E_k[-1] - E_bR_k);
+        F_R = coeff_F_R * (E_bR_k - E_k[-1]);
 
-        E_L = (coeff_E_L * E_bL_pk + 4 * E_pk[0]) / (coeff_E_L + 4);
-        E_R = (coeff_E_R * E_bR_pk + 4 * E_pk[-1]) / (coeff_E_R + 4);
+        # Computing the rolled balance at this timestep
+        energy_diff = 0
+        kinetic_energy_IC = 0
+        internal_energy_IC = 0
+        radiation_energy_IC = 0
+        kinetic_energy = 0
+        internal_energy = 0
+        radiation_energy = 0
 
-        energy = 0
         for i in range(N + 1):
-            energy += 1/2 * m_half[i] * (u[i]**2 - u_IC[i]**2)
+            kinetic_energy_IC += 1/2 * m_half[i] * u_IC[i]**2
+            kinetic_energy += 1/2 * m_half[i] * u[i]**2
             if i < N:
-                energy += m[i] * (e[i] - e_IC[i])
-                energy += m[i] * (E[i] / rho[i] - E_IC[i] / rho_IC[i])
+                internal_energy_IC += m[i] * e_IC[i]
+                internal_energy += m[i] * e[i]
+                radiation_energy_IC += m[i] * E_IC[i] / rho_IC[i]
+                radiation_energy += m[i] * E[i] / rho[i]
 
-        energy += (A_k[-1] * F_R - A_k[0] * F_L) * dt
-        energy += (A_pk[-1] * (1/3 * E_R + P_pk[-1]) * u_k[-1]  - \
-                   A_pk[0]  * (1/3 * E_L + P_pk[0] ) * u_k[0] ) * dt
+        energy_diff += kinetic_energy - kinetic_energy_IC
 
-        return energy
+        energy_diff += internal_energy - internal_energy_IC
+
+        energy_diff += radiation_energy - radiation_energy_IC
+
+        energy_diff += (A_k[-1] * F_R - A_k[0] * F_L) * dt
+
+        energy_diff += (A_pk[-1] * 1/3 * E_R * u_k[-1]  - A_pk[0]  * 1/3 * E_L * u_k[0]) * dt
+
+        energy_diff += (A_pk[-1] * P_bR_pk * u_k[-1] - A_pk[0] * P_bL_pk * u_k[0] ) * dt
+
+        return energy_diff
