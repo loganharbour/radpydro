@@ -9,7 +9,7 @@ input.N = 5
 input.r_half = np.linspace(0, 1, num=input.N + 1) # cm
 input.C_v = 1.66 # jerks / (cm3 eV)
 input.gamma = 1.5 # cm3 / g
-input.kappa = [1, 0, 1, 0] # g/cm2
+input.kappa = [1, 1, 1, 1] # g/cm2
 input.kappa_s = 1 # g / cm2
 input.a = 0.01372 # [jerks / (cm3 kev4)]
 input.c = 299.792 # [cm / sh]
@@ -40,6 +40,7 @@ rp = RadPydro(input)
 rp.computeTimeStep()
 
 # Predictor step
+rp.fields.addArtificialViscosity()
 rp.hydro.solveVelocity(rp.timeSteps[-1], True)
 rp.geo.moveMesh(rp.timeSteps[-1], True)
 rp.fields.recomputeRho(True)

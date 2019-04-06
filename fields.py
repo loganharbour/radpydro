@@ -56,6 +56,9 @@ class Fields:
         self.P_p = np.copy(self.P)
         self.P_old = np.copy(self.P)
 
+        # Defining artifical viscosity
+        self.Q = np.zeros(self.N)
+
         # Set pressure BCs as necessary
         if self.input.hydro_L == 'P':
             self.P_L = self.input.hydro_L_val
@@ -202,6 +205,80 @@ class Fields:
             self.radCorrector.assembleSystem(dt)
             self.radCorrector.solveSystem(dt)
 
+    def addArtificialViscosity(self):
+
+        # Initializing references for shorter notations
+        rho = self.rho_old
+        gamma = self.mat.gamma
+        u = self.u_old
+        dr = self.geo.dr_old
+        P = self.P_old
+
+        # Looping over cells to compute the cell-wise viscosity
+        for i in range(self.N):
+
+            du = u[i+1] - u[i]
+
+            if (du >= 0):
+                self.Q[i] = 0
+                continue
+
+            # Left boundary cell
+            if (i==0):
+
+                rho_minus = rho[i]
+                rho_plus = (rho[i] * dr[i] + rho[i+1] * dr[i+1]) / (dr[i] + dr[i+1])
+
+                c_s_minus = (gamma * P[i] / rho[i])**(1 / 2)
+                c_s_plus = ((gamma * P[i] / rho[i])**(1 / 2) * dr[i] +  \
+                            (gamma * P[i+1] / rho[i+1])**(1 / 2) * dr[i+1]) \
+                            / (dr[i] + dr[i+1])
+
+                R_minus = 1
+                R_plus = ((u[i+2] - u[i+1]) * dr[i]) / ((u[i+1] - u[i]) * dr[i+1])
+
+            # Internal cells
+            elif (i > 0 and i < self.N - 1):
+
+                rho_minus = (rho[i-1] * dr[i-1] + rho[i] * dr[i]) / (dr[i-1] + dr[i])
+                rho_plus = (rho[i] * dr[i] + rho[i+1] * dr[i+1]) / (dr[i] + dr[i+1])
+
+                c_s_minus = ((gamma * P[i-1] / rho[i-1])**(1 / 2) * dr[i-1] +  \
+                             (gamma * P[i] / rho[i])**(1 / 2) * dr[i]) \
+                            / (dr[i-1] + dr[i])
+                c_s_plus = ((gamma * P[i] / rho[i])**(1 / 2) * dr[i] +  \
+                            (gamma * P[i+1] / rho[i+1])**(1 / 2) * dr[i+1]) \
+                            / (dr[i] + dr[i+1])
+
+                R_minus = ((u[i] - u[i-1]) * dr[i]) / ((u[i+1] - u[i]) * dr[i-1])
+                R_plus = ((u[i+2] - u[i+1]) * dr[i]) / ((u[i+1] - u[i]) * dr[i+1])
+
+            # Right boundary cell
+            elif (i == self.N - 1):
+
+                rho_minus = (rho[i-1] * dr[i-1] + rho[i] * dr[i]) / (dr[i-1] + dr[i])
+                rho_plus = rho[i]
+
+                c_s_minus = ((gamma * P[i-1] / rho[i-1])**(1 / 2) * dr[i-1] +  \
+                             (gamma * P[i] / rho[i])**(1 / 2) * dr[i]) \
+                            / (dr[i-1] + dr[i])
+                c_s_plus = (gamma * P[i] / rho[i])**(1 / 2)
+
+                R_minus = ((u[i] - u[i-1]) * dr[i]) / ((u[i+1] - u[i]) * dr[i-1])
+                R_plus = 1
+
+            # Computing artificial viscosity
+            rho_bar = 2 * (rho_minus * rho_plus) / (rho_minus + rho_plus)
+            c_s_bar = min(c_s_plus, c_s_minus)
+            c_Q = (gamma + 1) / 4
+            
+            T = max(0, min(1, 2 * R_minus, 2 * R_plus, 0.5 * (R_minus + R_plus)))
+
+            self.Q[i] = (1 - T) * rho_bar * abs(du) * \
+                        (c_Q * abs(du) + (c_Q**2 * du**2 + c_s_bar ** 2)** (1 / 2))
+
+        # Updating pressure:
+        self.P_old += self.Q
 
     def conservationCheck(self, dt):
         # Centered cell and median mesh cell masses
