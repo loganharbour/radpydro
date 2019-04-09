@@ -15,16 +15,16 @@ input.a = 0.01372 # [jerks / (cm3 kev4)]
 input.c = 299.792 # [cm / sh]
 
 # Initial conditions
-input.rho = lambda r: 1.0 #g/cm3
-input.T = lambda r: 1.0 # keV
-input.u = lambda r: 0.0 # cm / sh
+input.rho = lambda r: 1.    #g/cm3
+input.T = lambda r: 1.      # keV
+input.u = lambda r: 1.      # cm / sh
 input.E = lambda r: input.a * input.T(0)**4
 
 # Boundary conditions
 input.hydro_L = 'u'
-input.hydro_L_val = 0.01
+input.hydro_L_val = None
 input.hydro_R = 'u'
-input.hydro_R_val = 0.01
+input.hydro_R_val = None
 input.rad_L = 'source'
 input.rad_L_val = input.a * input.T(0)**4
 input.rad_R = 'source'
@@ -89,3 +89,18 @@ print('Predictor Temperature: ',       rp.fields.T_p)
 print('New Step Temperature: ',                rp.fields.T)
 
 print('\nEnergy Conservation Check for Time Step: ', energy)
+
+fig, ax = plt.subplots(nrows=2, ncols=3)
+titles = [['Density', 'Velocity', 'Internal Enegy'],
+          ['Radiation Energy', 'Temperature', 'Pressure']]
+x_axis = [[rp.geo.r, rp.geo.r_half, rp.geo.r],
+          [rp.geo.r, rp.geo.r,      rp.geo.r]]
+y_axis = [[rp.fields.rho, rp.fields.u, rp.fields.e],
+          [rp.fields.E,   rp.fields.T, rp.fields.P]]
+for i in range(2):
+    for j in range(3):
+        ax[i][j].plot(x_axis[i][j], y_axis[i][j])
+        ax[i][j].set_title(titles[i][j])
+
+plt.tight_layout()
+plt.show()
