@@ -1,5 +1,5 @@
 import numpy as np
-
+import matplotlib.pyplot as plt
 from fields import Fields
 from geometry import SlabGeometry, CylindricalGeometry, SphericalGeometry
 from inputparameters import InputParameters
@@ -30,8 +30,10 @@ class RadPydro:
         # Initialize field variables
         self.fields = Fields(self)
 
-        # Time step
+        # Time parameters
         self.timeSteps = []
+        self.time = 0.
+        self.timeStep_num = 0
 
         # Initialize the radiation and hydro problems
         self.hydro = LagrangianHydro(self)
@@ -53,7 +55,7 @@ class RadPydro:
         if len(self.timeSteps) == 0:
             dE_k = E_k
         else:
-            dE_k = abs((self.fields.E + self.fields.E_old) / self.timeSteps[-1])
+            dE_k = abs((self.fields.E - self.fields.E_old) / self.timeSteps[-1])
 
         u_center = np.zeros(self.geo.N)
         for i in range(self.geo.N):
@@ -65,4 +67,59 @@ class RadPydro:
 
         self.timeSteps.append(min(self.input.maxTimeStep, dt_E, dt_u, dt_cs))
 
-        print('Computed time step size: ' + str(self.timeSteps[-1]), '\n')
+        #print('Computed time step size: ' + str(self.timeSteps[-1]), '\n')
+
+    def solveTimeStep(self, LOUD=False, PLOT=False):
+        # Compute time step size for this time step
+        self.computeTimeStep()
+
+        # Update time and time step number
+        self.time += self.timeSteps[-1]
+        self.timeStep_num += 1
+        print('==============================================================')
+        print('Starting time step %i with time step size %.3e'  \
+                % (self.timeStep_num, self.timeSteps[-1]))
+        print('==============================================================\n')
+
+        # Add artificial viscosity for this time step
+        self.fields.addArtificialViscosity()
+
+        # Predictor step
+        self.hydro.solveVelocity(self.timeSteps[-1], True)
+        self.geo.moveMesh(self.timeSteps[-1], True)
+        self.fields.recomputeRho(True)
+        self.radPredictor.solveSystem(self.timeSteps[-1])
+        self.fields.recomputeInternalEnergy(self.timeSteps[-1], True)
+        self.fields.recomputeT(True)
+        self.fields.recomputeP(True)
+
+        # Corrector step
+        self.hydro.solveVelocity(self.timeSteps[-1], False)
+        self.geo.moveMesh(self.timeSteps[-1], False)
+        self.fields.recomputeRho(False)
+        self.radCorrector.solveSystem(self.timeSteps[-1])
+        self.fields.recomputeInternalEnergy(self.timeSteps[-1], False)
+        self.fields.recomputeT(False)
+        self.fields.recomputeP(False)
+
+        # Energy conservation check
+        energy_diff = self.fields.conservationCheck(self.timeSteps[-1])
+        print('Energy Conservation Check for Time Step: ', energy_diff, '\n')
+
+        self.fields.stepFields()
+        self.geo.stepGeometry()
+
+    def plotSolutions(self):
+        fig, ax = plt.subplots(nrows=2, ncols=3)
+        titles = [['Density', 'Velocity', 'Internal Enegy'],
+                  ['Radiation Energy', 'Temperature', 'Pressure']]
+        x_axis = [[self.geo.r, self.geo.r_half, self.geo.r],
+                  [self.geo.r, self.geo.r,      self.geo.r]]
+        y_axis = [[self.fields.rho, self.fields.u, self.fields.e],
+                  [self.fields.E,   self.fields.T, self.fields.P]]
+        for i in range(2):
+            for j in range(3):
+                ax[i][j].plot(x_axis[i][j], y_axis[i][j])
+                ax[i][j].set_title(titles[i][j])
+        plt.tight_layout()
+        plt.show()
