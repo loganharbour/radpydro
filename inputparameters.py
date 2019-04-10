@@ -11,7 +11,10 @@ class InputParameters:
         self.r_half = None
         self.R = None
         self.N = None
-        
+
+        # Time specifications
+        self.Tf = None
+
         # Whether or not to enable the hydro/radiation run
         self.enable_hydro = True
         self.enable_radiation = True

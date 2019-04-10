@@ -33,6 +33,7 @@ class RadPydro:
         self.timeSteps = []
         self.time = 0.
         self.timeStep_num = 0
+        self.Tf = input.Tf
 
         # Initialize the radiation and hydro problems
         self.hydro = LagrangianHydro(self)
@@ -40,7 +41,6 @@ class RadPydro:
         self.radCorrector = LagrangianRadiationCorrector(self)
 
     def computeTimeStep(self):
-
         dr = self.geo.dr
         u = self.fields.u
         F_c = self.input.CoFactor
@@ -66,44 +66,44 @@ class RadPydro:
 
         self.timeSteps.append(min(self.input.maxTimeStep, dt_E, dt_u, dt_cs))
 
-        #print('Computed time step size: ' + str(self.timeSteps[-1]), '\n')
+    def run(self):
+        while self.time < self.Tf:
+            # Compute time step size for this time step
+            self.computeTimeStep()
 
-    def solveTimeStep(self):
-        # Compute time step size for this time step
-        self.computeTimeStep()
+            # Update time and time step number
+            self.time += self.timeSteps[-1]
+            self.timeStep_num += 1
+            print('=========================================================')
+            print('Starting time step %i,  time = %.3e'  \
+                    % (self.timeStep_num, self.time))
+            print('=========================================================\n')
 
-        # Update time and time step number
-        self.time += self.timeSteps[-1]
-        self.timeStep_num += 1
-        print('==============================================================')
-        print('Starting time step %i with time step size %.3e'  \
-                % (self.timeStep_num, self.timeSteps[-1]))
-        print('==============================================================\n')
+            # Add artificial viscosity for this time step
+            self.fields.addArtificialViscosity()
 
-        # Add artificial viscosity for this time step
-        self.fields.addArtificialViscosity()
+            # Predictor step
+            self.hydro.solveVelocity(self.timeSteps[-1], True)
+            self.geo.moveMesh(self.timeSteps[-1], True)
+            self.fields.recomputeRho(True)
+            self.radPredictor.solveSystem(self.timeSteps[-1])
+            self.fields.recomputeInternalEnergy(self.timeSteps[-1], True)
+            self.fields.recomputeT(True)
+            self.fields.recomputeP(True)
 
-        # Predictor step
-        self.hydro.solveVelocity(self.timeSteps[-1], True)
-        self.geo.moveMesh(self.timeSteps[-1], True)
-        self.fields.recomputeRho(True)
-        self.radPredictor.solveSystem(self.timeSteps[-1])
-        self.fields.recomputeInternalEnergy(self.timeSteps[-1], True)
-        self.fields.recomputeT(True)
-        self.fields.recomputeP(True)
+            # Corrector step
+            self.hydro.solveVelocity(self.timeSteps[-1], False)
+            self.geo.moveMesh(self.timeSteps[-1], False)
+            self.fields.recomputeRho(False)
+            self.radCorrector.solveSystem(self.timeSteps[-1])
+            self.fields.recomputeInternalEnergy(self.timeSteps[-1], False)
+            self.fields.recomputeT(False)
+            self.fields.recomputeP(False)
 
-        # Corrector step
-        self.hydro.solveVelocity(self.timeSteps[-1], False)
-        self.geo.moveMesh(self.timeSteps[-1], False)
-        self.fields.recomputeRho(False)
-        self.radCorrector.solveSystem(self.timeSteps[-1])
-        self.fields.recomputeInternalEnergy(self.timeSteps[-1], False)
-        self.fields.recomputeT(False)
-        self.fields.recomputeP(False)
+            # Energy conservation check
+            energy_diff = self.fields.conservationCheck(self.timeSteps[-1])
+            print('Energy Conservation Check for Time Step: ', energy_diff, '\n')
 
-        # Energy conservation check
-        energy_diff = self.fields.conservationCheck(self.timeSteps[-1])
-        print('Energy Conservation Check for Time Step: ', energy_diff, '\n')
-
-        self.fields.stepFields()
-        self.geo.stepGeometry()
+            # Copy to old containers for next time step
+            self.fields.stepFields()
+            self.geo.stepGeometry()
