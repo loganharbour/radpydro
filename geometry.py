@@ -34,10 +34,11 @@ class Geometry:
         self.recomputeGeometry(False)
         self.stepGeometry()
 
-    def moveMesh(self, dt, predictor):
+    def moveMesh(self, predictor):
         r_half_old = self.r_half_old
         u_old = self.rp.fields.u_old
         m = self.rp.mat.m
+        dt = self.rp.timeSteps[-1]
         if predictor:
             u_new = self.rp.fields.u_p
             V_new = self.V_p

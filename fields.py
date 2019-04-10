@@ -133,12 +133,14 @@ class Fields:
             rho_new[i] = m[i] / V_new[i]
 
     # Recompute radiation energy with updated internal energy
-    def recomputeInternalEnergy(self, dt, predictor):
+    def recomputeInternalEnergy(self, predictor):
         # Constants
         m = self.mat.m
         a = self.input.a
         c = self.input.c
         C_v = self.mat.C_v
+        dt = self.rp.timeSteps[-1]
+
 
         if predictor:
             e_old = self.e_old
@@ -224,7 +226,8 @@ class Fields:
             P_new[i] = gamma_minus * rho_new[i] * e_new[i]
 
     # Recompute radiation energy density
-    def recomputeE(self, dt, predictor):
+    def recomputeE(self, predictor):
+        dt = self.rp.timeSteps[-1]
         if predictor:
             self.radPredictor.computeAuxiliaryFields(dt)
             self.radPredictor.assembleSystem(dt)
@@ -309,7 +312,7 @@ class Fields:
         # Updating pressure:
         self.P_old += self.Q
 
-    def conservationCheck(self, dt):
+    def conservationCheck(self):
         # Centered cell and median mesh cell masses
         m = self.mat.m
         m_half = self.mat.m_half
@@ -318,6 +321,7 @@ class Fields:
         a = self.input.a
         c = self.input.c
         N = self.geo.N
+        dt = self.rp.timeSteps[-1]
 
         # Initial conditions
         u_IC = self.u_IC
