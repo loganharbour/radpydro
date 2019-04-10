@@ -69,7 +69,7 @@ class RadPydro:
 
         #print('Computed time step size: ' + str(self.timeSteps[-1]), '\n')
 
-    def solveTimeStep(self, LOUD=False, PLOT=False):
+    def solveTimeStep(self):
         # Compute time step size for this time step
         self.computeTimeStep()
 
