@@ -88,31 +88,31 @@ class RadPydro:
             self.fields.addArtificialViscosity()
 
             # Predictor step
-            self.hydro.solveVelocity(self.timeSteps[-1], True)
-            self.geo.moveMesh(self.timeSteps[-1], True)
+            self.hydro.solveVelocity(True)
+            self.geo.moveMesh(True)
             self.fields.recomputeRho(True)
 
             if self.input.enable_radiation:
-                self.radPredictor.solveSystem(self.timeSteps[-1])
+                self.radPredictor.solveSystem()
 
-            self.fields.recomputeInternalEnergy(self.timeSteps[-1], True)
+            self.fields.recomputeInternalEnergy(True)
             self.fields.recomputeT(True)
             self.fields.recomputeP(True)
 
             # Corrector step
-            self.hydro.solveVelocity(self.timeSteps[-1], False)
-            self.geo.moveMesh(self.timeSteps[-1], False)
+            self.hydro.solveVelocity(False)
+            self.geo.moveMesh(False)
             self.fields.recomputeRho(False)
 
             if self.input.enable_radiation:
-                self.radCorrector.solveSystem(self.timeSteps[-1])
+                self.radCorrector.solveSystem()
 
-            self.fields.recomputeInternalEnergy(self.timeSteps[-1], False)
+            self.fields.recomputeInternalEnergy(False)
             self.fields.recomputeT(False)
             self.fields.recomputeP(False)
 
             # Energy conservation check
-            energy_diff = self.fields.conservationCheck(self.timeSteps[-1])
+            energy_diff = self.fields.conservationCheck()
             print('Energy Conservation Check for Time Step: ', energy_diff, '\n')
 
             # Copy to old containers for next time step

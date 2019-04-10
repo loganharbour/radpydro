@@ -174,9 +174,10 @@ class LagrangianRadiationCorrector:
             coeff_F_bR = - 2 * c / (3 * rho_k[-1] * dr_k[-1] * kappa_t[-1] + 4)
             self.diag[-1] -= A_k[-1] * coeff_F_bR / 2
             self.rhs[-1] += A_k[-1] * coeff_F_bR * E_old[-1] / 2
-            self.rhs[-1] -= A_k[-1] * coeff_F_bR * self.fields.E_bR 
+            self.rhs[-1] -= A_k[-1] * coeff_F_bR * self.fields.E_bR
 
-    def solveSystem(self, dt):
+    def solveSystem(self):
+        dt = self.rp.timeSteps[-1]
         self.computeAuxiliaryFields(dt)
         self.assembleSystem(dt)
 

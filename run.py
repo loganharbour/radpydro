@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 input = InputParameters()
-input.enable_radiation = False
+input.enable_radiation = True
 input.geometry = 'slab'
 input.N = 250
 input.R = 1

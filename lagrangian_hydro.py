@@ -10,9 +10,10 @@ class LagrangianHydro:
         self.fields = rp.fields
 
     # Solve for velocities (Eqs. 14 and 24)
-    def solveVelocity(self, dt, predictor):
+    def solveVelocity(self, predictor):
         u_old = self.fields.u_old
         m_half = self.mat.m_half
+        dt = self.rp.timeSteps[-1]
         if predictor:
             A = self.geo.A_old
             P = self.fields.P_old
