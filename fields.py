@@ -120,125 +120,7 @@ class Fields:
                 values[i] = function(self.geo.r_half[i])
         return values
 
-    # Recmpute density with updated cell volumes
-    def recomputeRho(self, predictor):
-        m = self.mat.m
-        if predictor:
-            rho_new = self.rho_p
-            V_new = self.geo.V_p
-        else:
-            rho_new = self.rho
-            V_new = self.geo.V
-        for i in range(self.N):
-            rho_new[i] = m[i] / V_new[i]
-
-    # Recompute radiation energy with updated internal energy
-    def recomputeInternalEnergy(self, predictor):
-        # Constants
-        m = self.mat.m
-        a = self.input.a
-        c = self.input.c
-        C_v = self.mat.C_v
-        dt = self.rp.timeSteps[-1]
-
-
-        if predictor:
-            e_old = self.e_old
-
-            if self.input.enable_radiation:
-                T_old = self.T_old
-                E_pk = (self.E_p + self.E_old) / 2
-                xi_old = self.rp.radPredictor.xi
-                self.mat.recomputeKappa_a(T_old)
-                kappa_a_old = self.mat.kappa_a
-
-                increment = dt * C_v * (m * kappa_a_old * c * (E_pk - a * T_old**4) + xi_old)
-                increment /= m * C_v + dt * m * kappa_a_old * c * 2 * a * T_old**3
-
-            else:
-                 P_old = self.P_old
-                 A_old = self.geo.A_old
-                 u_pk  = (self.u_old + self.u_p) / 2
-
-                 xi_old = np.zeros(self.geo.N)
-                 for i in range(self.geo.N):
-                     xi_old[i] = -P_old[i] * (A_old[i+1] * u_pk[i+1] - A_old[i] * u_pk[i])
-
-                 increment = dt / m * xi_old
-
-            self.e_p = e_old + increment
-
-        else:
-            e_p = self.e_p
-
-            if self.input.enable_radiation:
-                T_old = self.T_old
-                T_p = self.T_p
-                T_pk = (T_p + T_old) / 2
-                T_pk4 = (T_p**4 + T_old**4) / 2
-                E_k = (self.E + self.E_old) / 2
-                self.mat.recomputeKappa_a(T_pk)
-                kappa_a_pk = self.mat.kappa_a
-                xi_k = self.rp.radCorrector.xi
-
-                increment = dt * C_v * (m * kappa_a_pk * c * (E_k - a * T_pk4) + xi_k)
-                increment /= m * C_v + dt * m * kappa_a_pk * c * 2 * a * T_p**3
-
-            else:
-                e_old = self.e_old
-                P_pk  = (self.P_old + self.P_p) / 2
-                A_pk  = (self.geo.A_old + self.geo.A_p) / 2
-                u_k   = (self.u + self.u_old) / 2
-
-                xi_k = np.zeros(self.geo.N)
-                for i in range(self.geo.N):
-                    xi_k[i]  = -(m[i] / dt) * (e_p[i] - e_old[i])
-                    xi_k[i] -= P_pk[i] * (A_pk[i+1] * u_k[i+1] - A_pk[i] * u_k[i])
-
-                increment = dt / m * xi_k
-
-            self.e = e_p + increment
-
-    # Recompute temperature with updated internal energy
-    def recomputeT(self, predictor):
-        C_v = self.mat.C_v
-        if predictor:
-            T_new = self.T_p
-            e_new = self.e_p
-        else:
-            T_new = self.T
-            e_new = self.e
-        for i in range(self.N):
-            T_new[i] = e_new[i] / C_v
-
-    # Recompute pressure with updated density and internal energy
-    def recomputeP(self, predictor):
-        gamma_minus = self.mat.gamma - 1
-        if predictor:
-            P_new = self.P_p
-            e_new = self.e_p
-            rho_new = self.rho_p
-        else:
-            P_new = self.P
-            e_new = self.e
-            rho_new = self.rho
-        for i in range(self.N):
-            P_new[i] = gamma_minus * rho_new[i] * e_new[i]
-
-    # Recompute radiation energy density
-    def recomputeE(self, predictor):
-        dt = self.rp.timeSteps[-1]
-        if predictor:
-            self.radPredictor.computeAuxiliaryFields(dt)
-            self.radPredictor.assembleSystem(dt)
-            self.radPredictor.solveSystem(dt)
-        else:
-            self.radCorrector.computeAuxiliaryFields(dt)
-            self.radCorrector.assembleSystem(dt)
-            self.radCorrector.solveSystem(dt)
-
     def addArtificialViscosity(self):
-
         # Initializing references for shorter notations
         rho = self.rho_old
         gamma = self.mat.gamma
@@ -248,7 +130,6 @@ class Fields:
 
         # Looping over cells to compute the cell-wise viscosity
         for i in range(self.N):
-
             du = u[i+1] - u[i]
 
             if (du >= 0):
@@ -257,7 +138,6 @@ class Fields:
 
             # Left boundary cell
             if (i==0):
-
                 rho_minus = rho[i]
                 rho_plus = (rho[i] * dr[i] + rho[i+1] * dr[i+1]) / (dr[i] + dr[i+1])
 
@@ -287,7 +167,6 @@ class Fields:
 
             # Right boundary cell
             elif (i == self.N - 1):
-
                 rho_minus = (rho[i-1] * dr[i-1] + rho[i] * dr[i]) / (dr[i-1] + dr[i])
                 rho_plus = rho[i]
 

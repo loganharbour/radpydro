@@ -88,28 +88,28 @@ class RadPydro:
             self.fields.addArtificialViscosity()
 
             # Predictor step
-            self.hydro.solveVelocity(True)
+            self.hydro.recomputeVelocity(True)
             self.geo.moveMesh(True)
-            self.fields.recomputeRho(True)
+            self.hydro.recomputeDensity(True)
 
             if self.input.enable_radiation:
-                self.radPredictor.solveSystem()
+                self.radPredictor.recomputeRadiationEnergy()
 
-            self.fields.recomputeInternalEnergy(True)
-            self.fields.recomputeT(True)
-            self.fields.recomputeP(True)
+            self.hydro.recomputeInternalEnergy(True)
+            self.hydro.recomputeTemperature(True)
+            self.hydro.recomputePressure(True)
 
             # Corrector step
-            self.hydro.solveVelocity(False)
+            self.hydro.recomputeVelocity(False)
             self.geo.moveMesh(False)
-            self.fields.recomputeRho(False)
+            self.hydro.recomputeDensity(False)
 
             if self.input.enable_radiation:
-                self.radCorrector.solveSystem()
+                self.radCorrector.recomputeRadiationEnergy()
 
-            self.fields.recomputeInternalEnergy(False)
-            self.fields.recomputeT(False)
-            self.fields.recomputeP(False)
+            self.hydro.recomputeInternalEnergy(False)
+            self.hydro.recomputeTemperature(False)
+            self.hydro.recomputePressure(False)
 
             # Energy conservation check
             energy_diff = self.fields.conservationCheck()

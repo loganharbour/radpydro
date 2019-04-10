@@ -176,7 +176,7 @@ class LagrangianRadiationCorrector:
             self.rhs[-1] += A_k[-1] * coeff_F_bR * E_old[-1] / 2
             self.rhs[-1] -= A_k[-1] * coeff_F_bR * self.fields.E_bR
 
-    def solveSystem(self):
+    def recomputeRadiationEnergy(self):
         dt = self.rp.timeSteps[-1]
         self.computeAuxiliaryFields(dt)
         self.assembleSystem(dt)
