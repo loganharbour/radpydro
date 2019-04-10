@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 class Fields:
     def __init__(self, rp):
@@ -399,3 +400,18 @@ class Fields:
         energy_diff += (A_pk[-1] * P_bR_pk * u_k[-1] - A_pk[0] * P_bL_pk * u_k[0] ) * dt
 
         return energy_diff
+
+    def plotFields(self):
+        fig, ax = plt.subplots(nrows=2, ncols=3)
+        titles = [['Density', 'Velocity', 'Internal Enegy'],
+                  ['Radiation Energy', 'Temperature', 'Pressure']]
+        x_axis = [[self.geo.r, self.geo.r_half, self.geo.r],
+                  [self.geo.r, self.geo.r,      self.geo.r]]
+        y_axis = [[self.rho, self.u, self.e],
+                  [self.E,   self.T, self.P]]
+        for i in range(2):
+            for j in range(3):
+                ax[i][j].plot(x_axis[i][j], y_axis[i][j])
+                ax[i][j].set_title(titles[i][j])
+        plt.tight_layout()
+        plt.show()
