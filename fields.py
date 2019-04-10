@@ -142,30 +142,58 @@ class Fields:
 
         if predictor:
             e_old = self.e_old
-            T_old = self.T_old
-            E_pk = (self.E_p + self.E_old) / 2
-            xi_old = self.rp.radPredictor.xi
-            self.mat.recomputeKappa_a(T_old)
-            kappa_a_old = self.mat.kappa_a
 
-            increment = dt * C_v * (m * kappa_a_old * c * (E_pk - a * T_old**4) + xi_old)
-            increment /= m * C_v + dt * m * kappa_a_old * c * 2 * a * T_old**3
+            if self.input.enable_radiation:
+                T_old = self.T_old
+                E_pk = (self.E_p + self.E_old) / 2
+                xi_old = self.rp.radPredictor.xi
+                self.mat.recomputeKappa_a(T_old)
+                kappa_a_old = self.mat.kappa_a
+
+                increment = dt * C_v * (m * kappa_a_old * c * (E_pk - a * T_old**4) + xi_old)
+                increment /= m * C_v + dt * m * kappa_a_old * c * 2 * a * T_old**3
+
+            else:
+                 P_old = self.P_old
+                 A_old = self.geo.A_old
+                 u_pk  = (self.u_old + self.u_p) / 2
+
+                 xi_old = np.zeros(self.geo.N)
+                 for i in range(self.geo.N):
+                     xi_old[i] = -P_old[i] * (A_old[i+1] * u_pk[i+1] - A_old[i] * u_pk[i])
+
+                 increment = dt / m * xi_old
 
             self.e_p = e_old + increment
 
         else:
             e_p = self.e_p
-            T_old = self.T_old
-            T_p = self.T_p
-            T_pk = (T_p + T_old) / 2
-            T_pk4 = (T_p**4 + T_old**4) / 2
-            E_k = (self.E + self.E_old) / 2
-            self.mat.recomputeKappa_a(T_pk)
-            kappa_a_pk = self.mat.kappa_a
-            xi_k = self.rp.radCorrector.xi
 
-            increment = dt * C_v * (m * kappa_a_pk * c * (E_k - a * T_pk4) + xi_k)
-            increment /= m * C_v + dt * m * kappa_a_pk * c * 2 * a * T_p**3
+            if self.input.enable_radiation:
+                T_old = self.T_old
+                T_p = self.T_p
+                T_pk = (T_p + T_old) / 2
+                T_pk4 = (T_p**4 + T_old**4) / 2
+                E_k = (self.E + self.E_old) / 2
+                self.mat.recomputeKappa_a(T_pk)
+                kappa_a_pk = self.mat.kappa_a
+                xi_k = self.rp.radCorrector.xi
+
+                increment = dt * C_v * (m * kappa_a_pk * c * (E_k - a * T_pk4) + xi_k)
+                increment /= m * C_v + dt * m * kappa_a_pk * c * 2 * a * T_p**3
+
+            else:
+                e_old = self.e_old
+                P_pk  = (self.P_old + self.P_p) / 2
+                A_pk  = (self.geo.A_old + self.geo.A_p) / 2
+                u_k   = (self.u + self.u_old) / 2
+
+                xi_k = np.zeros(self.geo.N)
+                for i in range(self.geo.N):
+                    xi_k[i]  = -(m[i] / dt) * (e_p[i] - e_old[i])
+                    xi_k[i] -= P_pk[i] * (A_pk[i+1] * u_k[i+1] - A_pk[i] * u_k[i])
+
+                increment = dt / m * xi_k
 
             self.e = e_p + increment
 
@@ -409,8 +437,12 @@ class Fields:
                   [self.geo.r, self.geo.r,      self.geo.r]]
         y_axis = [[self.rho, self.u, self.e],
                   [self.E,   self.T, self.P]]
+
+
         for i in range(2):
             for j in range(3):
+                for k in range(len(y_axis[i][j])):
+                    y_axis[i][j][k] = np.round(y_axis[i][j][k], 5)
                 ax[i][j].plot(x_axis[i][j], y_axis[i][j])
                 ax[i][j].set_title(titles[i][j])
         plt.tight_layout()

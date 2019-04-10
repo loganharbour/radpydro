@@ -16,8 +16,7 @@ class InputParameters:
         self.Tf = None
 
         # Whether or not to enable the hydro/radiation run
-        self.enable_hydro = True
-        self.enable_radiation = True
+        self.enable_radiation = None
 
         # Material properties
         self.C_v = None
@@ -61,8 +60,13 @@ class InputParameters:
             exit("Geometry type {} not supported".format(self.geometry))
 
         # Need to run at least one problem
-        if (not self.enable_hydro and not self.enable_radiation):
-            exit("No problem to run")
+        if (self.enable_radiation):
+            print("Radiation is enabled. Running rad-hydro calculation.")
+        else:
+            print("Radiation is disabled. Running hydro only calculation")
+            self.E = lambda r: 0
+            self.rad_L_val = 0
+            self.rad_R_val = 0
 
         # Material properties
         if not isScalar(self.C_v):

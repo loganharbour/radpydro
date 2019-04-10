@@ -35,10 +35,13 @@ class RadPydro:
         self.timeStep_num = 0
         self.Tf = input.Tf
 
-        # Initialize the radiation and hydro problems
+        # Initialize hydro problem
         self.hydro = LagrangianHydro(self)
-        self.radPredictor = LagrangianRadiationPredictor(self)
-        self.radCorrector = LagrangianRadiationCorrector(self)
+
+        # Initialize radiation problem (if used)
+        if input.enable_radiation:
+            self.radPredictor = LagrangianRadiationPredictor(self)
+            self.radCorrector = LagrangianRadiationCorrector(self)
 
     def computeTimeStep(self):
         dr = self.geo.dr
@@ -49,7 +52,6 @@ class RadPydro:
         c_s = (self.mat.gamma * self.fields.P / self.fields.rho)**(1 / 2)
 
         E_k = (self.fields.E + self.fields.E_old) / 2
-
         dE_k = np.zeros(self.geo.N)
         if len(self.timeSteps) == 0:
             dE_k = E_k
@@ -64,7 +66,10 @@ class RadPydro:
         dt_u = min(dr * F_c / u_center)
         dt_cs = min(dr * F_c / c_s)
 
-        self.timeSteps.append(min(self.input.maxTimeStep, dt_E, dt_u, dt_cs))
+        if self.input.enable_radiation:
+            self.timeSteps.append(min(self.input.maxTimeStep, dt_E, dt_u, dt_cs))
+        else:
+            self.timeSteps.append(min(self.input.maxTimeStep, dt_u, dt_cs))
 
     def run(self):
         while self.time < self.Tf:
@@ -86,7 +91,10 @@ class RadPydro:
             self.hydro.solveVelocity(self.timeSteps[-1], True)
             self.geo.moveMesh(self.timeSteps[-1], True)
             self.fields.recomputeRho(True)
-            self.radPredictor.solveSystem(self.timeSteps[-1])
+
+            if self.input.enable_radiation:
+                self.radPredictor.solveSystem(self.timeSteps[-1])
+
             self.fields.recomputeInternalEnergy(self.timeSteps[-1], True)
             self.fields.recomputeT(True)
             self.fields.recomputeP(True)
@@ -95,7 +103,10 @@ class RadPydro:
             self.hydro.solveVelocity(self.timeSteps[-1], False)
             self.geo.moveMesh(self.timeSteps[-1], False)
             self.fields.recomputeRho(False)
-            self.radCorrector.solveSystem(self.timeSteps[-1])
+
+            if self.input.enable_radiation:
+                self.radCorrector.solveSystem(self.timeSteps[-1])
+
             self.fields.recomputeInternalEnergy(self.timeSteps[-1], False)
             self.fields.recomputeT(False)
             self.fields.recomputeP(False)
