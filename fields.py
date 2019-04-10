@@ -271,7 +271,7 @@ class Fields:
             rho_bar = 2 * (rho_minus * rho_plus) / (rho_minus + rho_plus)
             c_s_bar = min(c_s_plus, c_s_minus)
             c_Q = (gamma + 1) / 4
-            
+
             T = max(0, min(1, 2 * R_minus, 2 * R_plus, 0.5 * (R_minus + R_plus)))
 
             self.Q[i] = (1 - T) * rho_bar * abs(du) * \
