@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 from fields import Fields
 from geometry import SlabGeometry, CylindricalGeometry, SphericalGeometry
 from inputparameters import InputParameters
@@ -108,18 +107,3 @@ class RadPydro:
 
         self.fields.stepFields()
         self.geo.stepGeometry()
-
-    def plotSolutions(self):
-        fig, ax = plt.subplots(nrows=2, ncols=3)
-        titles = [['Density', 'Velocity', 'Internal Enegy'],
-                  ['Radiation Energy', 'Temperature', 'Pressure']]
-        x_axis = [[self.geo.r, self.geo.r_half, self.geo.r],
-                  [self.geo.r, self.geo.r,      self.geo.r]]
-        y_axis = [[self.fields.rho, self.fields.u, self.fields.e],
-                  [self.fields.E,   self.fields.T, self.fields.P]]
-        for i in range(2):
-            for j in range(3):
-                ax[i][j].plot(x_axis[i][j], y_axis[i][j])
-                ax[i][j].set_title(titles[i][j])
-        plt.tight_layout()
-        plt.show()

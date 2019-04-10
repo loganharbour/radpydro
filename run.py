@@ -40,3 +40,4 @@ input.T_final = 1
 rp = RadPydro(input)
 while rp.time < 0.5:
     rp.solveTimeStep()
+rp.fields.plotFields()
