@@ -262,6 +262,8 @@ class Fields:
 
         E_L = (coeff_E_L * E_bL_pk + 4 * E_pk[0]) / (coeff_E_L + 4)
         E_R = (coeff_E_R * E_bR_pk + 4 * E_pk[-1]) / (coeff_E_R + 4)
+        print(E_L, E_R)
+        print(coeff_E_L, coeff_E_R)
 
         # Setting up boundary parameters for the pressure boundary values
         if self.input.hydro_L is 'P':
@@ -309,7 +311,6 @@ class Fields:
         energy_diff += (A_pk[-1] * 1/3 * E_R * u_k[-1]  - A_pk[0]  * 1/3 * E_L * u_k[0]) * dt
 
         energy_diff += (A_pk[-1] * P_bR_pk * u_k[-1] - A_pk[0] * P_bL_pk * u_k[0] ) * dt
-
         return energy_diff
 
     def plotFields(self):
