@@ -8,8 +8,8 @@ input.enable_radiation = True
 input.geometry = 'slab'
 input.N = 100
 input.R = 1
-input.Tf = 0.5
-input.r_half = np.linspace(0, input.R, num=input.N + 1) # cm
+input.Tf = 0.01
+input.r_half = np.linspace( 0, input.R, num=input.N + 1) # cm
 input.C_v = 1.66 # jerks / (cm3 eV)
 input.gamma = 1.5 # cm3 / g
 input.kappa = [1, 1, 1, 1] # g/cm2
