@@ -41,4 +41,4 @@ input.T_final = 1
 
 rp = RadPydro(input)
 rp.run()
-rp.fields.plotFields()
+#rp.fields.plotFields()
