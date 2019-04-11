@@ -139,17 +139,14 @@ class RadPydro:
             self.hydro.recomputePressure(False)
 
             # Energy conservation check
-            energy_diff = self.fields.conservationCheck()
-            print('Peter: ', energy_diff, '\n')
             energy_diff = self.recomputeEnergyConservation()
-            print('Me: ', energy_diff, '\n')
+            print('Energy conservation check: ', energy_diff, '\n')
 
             # Copy to old containers for next time step
             self.fields.stepFields()
             self.geo.stepGeometry()
 
     def recomputeEnergyConservation(self):
-
         kinetic_energy = self.kinetic_energy
         internal_energy = self.internal_energy
         radiation_energy = self.radiation_energy
@@ -171,7 +168,7 @@ class RadPydro:
         A_pk = (self.geo.A_p + self.geo.A_old) / 2
 
         dr_k = (self.geo.dr + self.geo.dr_old) / 2
-        dr_pk = (self.geo.dr_p + self.geo.dr_old)
+        dr_pk = (self.geo.dr_p + self.geo.dr_old) /2
 
         E_k = (self.fields.E + self.fields.E_old) / 2
         E_pk = (self.fields.E_p + self.fields.E_old) / 2
@@ -188,7 +185,7 @@ class RadPydro:
 
         # Recomputing kappa_t at the cell edges and cell centers
         self.mat.recomputeKappa_t(T_pk)
-        kappa_t_k_edge = self.mat.kappa_t
+        kappa_t_pk_edge = self.mat.kappa_t
         self.mat.recomputeKappa_a(T_pk)
         kappa_t_pk_center = self.mat.kappa_a + self.mat.kappa_s
 
@@ -220,14 +217,13 @@ class RadPydro:
         # Compute the boundary radiation energies in the momentum eqn
         coeff_E_L = 3 * rho_pk[0] * dr_pk[0] * kappa_t_pk_center[0]
         coeff_E_R = (3 * rho_pk[-1] * dr_pk[-1] * kappa_t_pk_center[-1])
-        print(coeff_E_L, coeff_E_R)
 
         E_L = (coeff_E_L * E_bL_pk + 4 * E_pk[0]) / (coeff_E_L + 4)
         E_R = (coeff_E_R * E_bR_pk + 4 * E_pk[-1]) / (coeff_E_R + 4)
 
         # Compute radiation flux at boundaries
-        coeff_F_L = -2 * c / (3 * rho_k[0] * dr_k[0] * kappa_t_k_edge[0] + 4)
-        coeff_F_R = -2 * c / (3 * rho_k[-1] * dr_k[-1] * kappa_t_k_edge[-1] + 4)
+        coeff_F_L = -2 * c / (3 * rho_k[0] * dr_k[0] * kappa_t_pk_edge[0] + 4)
+        coeff_F_R = -2 * c / (3 * rho_k[-1] * dr_k[-1] * kappa_t_pk_edge[-1] + 4)
 
         F_L = coeff_F_L * (E_k[0] - E_bL_k)
         F_R = coeff_F_R * (E_bR_k - E_k[-1])
@@ -247,7 +243,6 @@ class RadPydro:
 
         # Compute compressive work
         work = (A_pk[-1] * 1/3 * E_R * u_k[-1] - A_pk[0] * 1/3 * E_L * u_k[0]) * dt
-        print(E_L, E_R)
 
         work += (A_pk[-1] * P_bR_pk * u_k[-1] - A_pk[0] * P_bL_pk * u_k[0]) * dt
 
@@ -267,4 +262,8 @@ class RadPydro:
         dIE = internal_energy[-1] - internal_energy[0]
         dRE = radiation_energy[-1] - radiation_energy[0]
 
-        return dKE + dIE + dRE + leakage + work
+        for i in range(1, len(work_energy)-1):
+            work += work_energy[i]
+            leakage += radiation_energy_leakage[i]
+
+        return dKE + dIE + dRE + work + leakage
