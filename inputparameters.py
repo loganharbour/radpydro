@@ -13,6 +13,11 @@ class InputParameters(InitialConditions):
         self.R_R = None
         self.N = None
         self.r_half = None
+        self.R = None
+        self.N = None
+
+        # Time specifications
+        self.Tf = None
 
         # Whether or not to enable the hydro/radiation run
         self.enable_radiation = None

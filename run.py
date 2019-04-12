@@ -6,12 +6,20 @@ import matplotlib.pyplot as plt
 
 input = InputParameters()
 input.enable_radiation = False
+<<<<<<< HEAD
 input.geometry = 'slab'
 input.N = 1000
 input.R_L = -0.25
 input.R_R = 0.25
 input.r_half = np.linspace(input.R_L, input.R_R, num=input.N + 1) # cm
 input.C_v = 0.14472799784454 # jerks / (cm3 eV)
+=======
+input.geometry = 'spherical'
+input.N = 250
+input.R = 1
+input.r_half = np.linspace( 0, input.R, num=input.N + 1) # cm
+input.C_v = 1.66 # jerks / (cm3 eV)
+>>>>>>> 46eddf48f19a2d70552e9e40bffb8e6912038da7
 input.gamma = 5/3 # cm3 / g
 input.kappa = [1, 1, 1, 1] # g/cm2
 input.kappa_s = 1 # g / cm2

@@ -32,7 +32,11 @@ class RadPydro:
         self.timeSteps = []
         self.time = 0.
         self.timeStep_num = 0
+<<<<<<< HEAD
         self.dt = self.input.dt
+=======
+        self.Tf = input.Tf
+>>>>>>> 46eddf48f19a2d70552e9e40bffb8e6912038da7
 
         # Initialize hydro problem
         self.hydro = LagrangianHydro(self)
@@ -46,7 +50,11 @@ class RadPydro:
         self.kinetic_energy = []
         self.internal_energy = []
         self.radiation_energy = []
+<<<<<<< HEAD
         self.radiation_leakage = []
+=======
+        self.radiation_energy_leakage = []
+>>>>>>> 46eddf48f19a2d70552e9e40bffb8e6912038da7
         self.work_energy = []
         self.total_energy = []
 
@@ -56,6 +64,7 @@ class RadPydro:
         radiation = 0
         for i in range(self.geo.N + 1):
             kinetic += 1/2 * self.mat.m_half[i] * self.fields.u_IC[i]**2
+<<<<<<< HEAD
 
             if i < self.geo.N:
                 internal += self.mat.m[i] * self.fields.e_IC[i]
@@ -72,6 +81,21 @@ class RadPydro:
         self.total_radiation_leakage = 0
         self.total_work_energy = 0
 
+=======
+
+            if i < self.geo.N:
+                internal += self.mat.m[i] * self.fields.e_IC[i]
+                radiation += self.mat.m[i] * self.fields.E_IC[i] / self.fields.rho_IC[i]
+        total = kinetic + internal + radiation
+
+        self.kinetic_energy.append(kinetic)
+        self.internal_energy.append(internal)
+        self.radiation_energy.append(radiation)
+        self.radiation_energy_leakage.append(0)
+        self.work_energy.append(0)
+        self.total_energy.append(total)
+
+>>>>>>> 46eddf48f19a2d70552e9e40bffb8e6912038da7
     def computeTimeStep(self):
         dr = self.geo.dr
         u = self.fields.u
