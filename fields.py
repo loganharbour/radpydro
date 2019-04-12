@@ -208,8 +208,6 @@ class Fields:
                     y_axis[i][j][k] = np.round(y_axis[i][j][k], 5)
                 ax[i][j].plot(x_axis[i][j], y_axis[i][j])
                 ax[i][j].set_title(titles[i][j])
-
-                if titles[i][j] is 'Temperature':
-                    ax[i][j].set_xlim([-0.02, 0.02])
+                ax[i][j].set_xlim([-0.02, 0.02])
         plt.tight_layout()
         plt.show()

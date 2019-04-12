@@ -9,19 +9,19 @@ class InitialConditions:
         if ((r >= self.R_L) and (r < 0)):
              return 1
         else:
-            return 1.29731782
+            return 1.07495
 
     def u(self, r):
         if ((r >= self.R_L) and (r < 0)):
-            return 0.152172533
+            return 1.42601
         else:
-            return 0.117297805
+            return 1.32658
 
     def T(self, r):
         if ((r >= self.R_L) and (r < 0)):
-            return 0.1
+            return 1.
         else:
-            return 0.119475741
+            return 1.04946
 
     def E(self, r):
         if ((r >= self.R_L) and (r < 0)):

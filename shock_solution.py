@@ -1,7 +1,7 @@
 import numpy as np
 
 # Define constants
-Cv     = 0.1   # specific heat
+Cv     = 1.66  # specific heat
 gamma  = 5./3  # thermodynamic constant
 
 # Define preshock conditions
@@ -22,14 +22,14 @@ M1    = v1/cs1  # postshock Mach number
 
 # Print preshock and postshock states
 print('\n')
-print('Preshock Velocity = %.3e' %v0, '(cm/sh) = ', M0, '(M)')
-print('Postshock Velocity = %.3e' %v1, '(cm/sh) = ', M1, '(M)')
+print('Preshock Velocity = %.5e' %v0, '(cm/sh) = %.3e' %M0, '(M)')
+print('Postshock Velocity = %.5e' %v1, '(cm/sh) = %.3e' %M1, '(M)')
 print('\n')
-print('Preshock Temperature = %.3e' %T0, '(keV)')
-print('Postshock Temperature = %.3e' %T1, '(keV)')
+print('Preshock Temperature = %.5e' %T0, '(keV)')
+print('Postshock Temperature = %.5e' %T1, '(keV)')
 print('\n')
-print('Preshock Density = %.3e' %rho0, '(g/cm^3)')
-print('Postshock Density = %.3e' %rho1, '(g/cm^3)')
+print('Preshock Density = %.5e' %rho0, '(g/cm^3)')
+print('Postshock Density = %.5e' %rho1, '(g/cm^3)')
 
 # Check jump conditions
 rmass = (rho0*v0) / (rho1*v1)
@@ -37,9 +37,9 @@ rmom  = (rho0*v0**2 + rho0*e0*(gamma-1)) / (rho1*v1**2 + rho1*e1*(gamma-1))
 rten  = (0.5*rho0*v0**3 + rho0*e0*v0*gamma) / (0.5*rho1*v1**3 + rho1*e1*v1*gamma)
 
 print('\n')
-print('Mass Flux Jump Ratio: ',         rmass)
-print('Momentum Flux Jump Ratio: ',     rmom)
-print('Total Energy Flux Jump Ratio: ', rten)
+print('Mass Flux Jump Ratio: %.3e'          %rmass)
+print('Momentum Flux Jump Ratio: %.3e'      %rmom)
+print('Total Energy Flux Jump Ratio: %.3e'  %rten)
 
 # Transform to frame where preshock velocity is zero
 ss = -v0    # shock speed
@@ -49,8 +49,8 @@ M0 = (v0-ss)/cs0    # preshock Mach number in dynamic frame
 M1 = (v1-ss)/cs1    # postshock Mach number in dynamic frame
 
 print('\n')
-print('Dynamic Preshock Velocity = %.3e' %v0, '(cm/sh) = ', M0, '(M)' )
-print('Dynamic Postshock Velocity = %.3e' %v1, '(cm/sh) = %.3e' %M1, '(M)')
+print('Dynamic Preshock Velocity = %.5e' %v0, '(cm/sh) = %.3e' %M0, '(M)' )
+print('Dynamic Postshock Velocity = %.5e' %v1, '(cm/sh) = %.3e' %M1, '(M)')
 
 # Compute ratios of delta flux to delta solution
 ratio_mass = (rho0*v0 - rho1*v1) / (rho0-rho1)
