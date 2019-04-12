@@ -99,7 +99,7 @@ class RadPydro:
             self.timeSteps.append(min(self.input.maxTimeStep, dt_u, dt_cs))
 
     def run(self):
-        while self.time < self.Tf:
+        while self.time < self.input.T_final:
             # Compute time step size for this time step
             self.computeTimeStep()
 
@@ -111,6 +111,10 @@ class RadPydro:
                     % (self.timeStep_num, self.time))
             print('=========================================================\n')
 
+            if self.timeStep_num % 1 == 0 or self.timeStep_num == 1:
+                self.fields.plotFields()
+            else:
+                pass
             # Add artificial viscosity for this time step
             self.fields.addArtificialViscosity()
 
@@ -204,16 +208,6 @@ class RadPydro:
             E_bR_k = E_k[-1]
             E_bR_pk = E_pk[-1]
 
-        # Setting up boundary parameters for the pressure boundary values
-        if self.input.hydro_L is 'P':
-            P_bL_pk = self.fields.P_L
-        else:
-            P_bL_pk = P_pk[0] + 1 / 3 * (E_pk[0] - E_L)
-        if self.input.hydro_R is 'P':
-            P_bR_pk = self.fields.P_R
-        else:
-            P_bR_pk = P_pk[-1] + 1 / 3 * (E_pk[-1] - E_R)
-
         # Compute the boundary radiation energies in the momentum eqn
         coeff_E_L = 3 * rho_pk[0] * dr_pk[0] * kappa_t_pk_center[0]
         coeff_E_R = (3 * rho_pk[-1] * dr_pk[-1] * kappa_t_pk_center[-1])
@@ -228,6 +222,15 @@ class RadPydro:
         F_L = coeff_F_L * (E_k[0] - E_bL_k)
         F_R = coeff_F_R * (E_bR_k - E_k[-1])
 
+        # Setting up boundary parameters for the pressure boundary values
+        if self.input.hydro_L is 'P':
+            P_bL_pk = self.fields.P_L
+        else:
+            P_bL_pk = P_pk[0] + 1 / 3 * (E_pk[0] - E_L)
+        if self.input.hydro_R is 'P':
+            P_bR_pk = self.fields.P_R
+        else:
+            P_bR_pk = P_pk[-1] + 1 / 3 * (E_pk[-1] - E_R)
 
         # Compute kinetic, internal, and radiation energies for this timestep
         kinetic, internal, radiation = 0, 0, 0
@@ -258,12 +261,12 @@ class RadPydro:
         total_energy.append(total)
 
         # Compute energy difference over step
-        dKE = kinetic_energy[-1] - kinetic_energy[0]
-        dIE = internal_energy[-1] - internal_energy[0]
-        dRE = radiation_energy[-1] - radiation_energy[0]
+        dKE = kinetic_energy[-1] - kinetic_energy[-2]
+        dIE = internal_energy[-1] - internal_energy[-2]
+        dRE = radiation_energy[-1] - radiation_energy[-2]
 
-        for i in range(1, len(work_energy)-1):
-            work += work_energy[i]
-            leakage += radiation_energy_leakage[i]
+        # for i in range(1, len(work_energy)-1):
+        #     work += work_energy[i]
+        #     leakage += radiation_energy_leakage[i]
 
         return dKE + dIE + dRE + work + leakage
