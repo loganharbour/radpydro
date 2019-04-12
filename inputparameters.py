@@ -1,38 +1,34 @@
 import numpy as np
 from sys import exit
+from initial_conditions import InitialConditions
 
 def isScalar(value):
     return isinstance(value, float) or isinstance(value, int)
 
-class InputParameters:
+class InputParameters(InitialConditions):
     def __init__(self):
         # Geometry specficiations
         self.geometry = 'slab'
-        self.r_half = None
-        self.R = None
+        self.R_L = None
+        self.R_R = None
         self.N = None
-
-        # Time specifications
-        self.Tf = None
+        self.r_half = None
 
         # Whether or not to enable the hydro/radiation run
         self.enable_radiation = None
 
         # Material properties
-        self.C_v = None
-        self.gamma = None
-        self.kappa = None
-        self.kappa_s = None
+        self.C_v = 1.66     # jerks/(cm3 eV)
+        self.gamma = 5./3.  # cm^3/g
+        self.kappa = kappa = [1, 1, 1, 1] # g/cm2
+        self.kappa_s = 1
 
         # Constants
-        self.a = None
-        self.c = None
+        self.a = 0.01372 # [jerks / (cm3 kev4)]
+        self.c = 299.792 # [cm / sh]
 
         # Initial conditions
-        self.E = None
-        self.rho = None
-        self.T = None
-        self.u = None
+        InitialConditions.__init__(self, self.R_L, self.R_R)
 
         # Hydro boundary conditions
         self.hydro_L = None
@@ -51,6 +47,7 @@ class InputParameters:
         self.relEFactor = None
         self.maxTimeStep = None
         self.T_final = None
+        self.dt = None
 
     def checkInputs(self):
         # Geometry checks

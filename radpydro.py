@@ -10,7 +10,6 @@ from materials import Materials
 
 class RadPydro:
     def __init__(self, input):
-
         # Store input parameters and check them
         self.input = input
         self.input.checkInputs()
@@ -33,7 +32,7 @@ class RadPydro:
         self.timeSteps = []
         self.time = 0.
         self.timeStep_num = 0
-        self.Tf = input.Tf
+        self.dt = self.input.dt
 
         # Initialize hydro problem
         self.hydro = LagrangianHydro(self)
@@ -47,7 +46,7 @@ class RadPydro:
         self.kinetic_energy = []
         self.internal_energy = []
         self.radiation_energy = []
-        self.radiation_energy_leakage = []
+        self.radiation_leakage = []
         self.work_energy = []
         self.total_energy = []
 
@@ -66,9 +65,12 @@ class RadPydro:
         self.kinetic_energy.append(kinetic)
         self.internal_energy.append(internal)
         self.radiation_energy.append(radiation)
-        self.radiation_energy_leakage.append(0)
+        self.radiation_leakage.append(0)
         self.work_energy.append(0)
         self.total_energy.append(total)
+
+        self.total_radiation_leakage = 0
+        self.total_work_energy = 0
 
     def computeTimeStep(self):
         dr = self.geo.dr
@@ -98,10 +100,14 @@ class RadPydro:
         else:
             self.timeSteps.append(min(self.input.maxTimeStep, dt_u, dt_cs))
 
-    def run(self):
+    def run(self, PLOT=False):
         while self.time < self.input.T_final:
+
             # Compute time step size for this time step
-            self.computeTimeStep()
+            if self.input.dt is None:
+                self.computeTimeStep()
+            else:
+                self.timeSteps.append(self.input.CoFactor * self.input.dt)
 
             # Update time and time step number
             self.time += self.timeSteps[-1]
@@ -111,10 +117,14 @@ class RadPydro:
                     % (self.timeStep_num, self.time))
             print('=========================================================\n')
 
-            if self.timeStep_num % 1 == 0 or self.timeStep_num == 1:
-                self.fields.plotFields()
+            if PLOT:
+                if self.timeStep_num % 100 == 0 or self.timeStep_num == 1:
+                    self.fields.plotFields()
+                else:
+                    pass
             else:
                 pass
+
             # Add artificial viscosity for this time step
             self.fields.addArtificialViscosity()
 
@@ -154,7 +164,7 @@ class RadPydro:
         kinetic_energy = self.kinetic_energy
         internal_energy = self.internal_energy
         radiation_energy = self.radiation_energy
-        radiation_energy_leakage = self.radiation_energy_leakage
+        radiation_leakage = self.radiation_leakage
         work_energy = self.work_energy
         total_energy = self.total_energy
 
@@ -252,21 +262,25 @@ class RadPydro:
         # Compute total energy
         total = kinetic + internal + radiation + leakage + work
 
+        # Compute energy final - initial energies
+        dKE = kinetic - kinetic_energy[0]
+        dIE = internal- internal_energy[0]
+        dRE = radiation - radiation_energy[0]
+
+        # Compute energy losses from pressure work, drift, and leakage
+        total_work = self.total_work_energy + work
+        total_leak = self.total_radiation_leakage + leakage
+
+        # Update loss terms from pressure work, drift, and leakage
+        self.total_work_energy += work
+        self.total_radiation_leakage += leakage
+
         # Append to storage
         kinetic_energy.append(kinetic)
         internal_energy.append(internal)
         radiation_energy.append(radiation)
-        radiation_energy_leakage.append(leakage)
+        radiation_leakage.append(leakage)
         work_energy.append(work)
         total_energy.append(total)
 
-        # Compute energy difference over step
-        dKE = kinetic_energy[-1] - kinetic_energy[-2]
-        dIE = internal_energy[-1] - internal_energy[-2]
-        dRE = radiation_energy[-1] - radiation_energy[-2]
-
-        # for i in range(1, len(work_energy)-1):
-        #     work += work_energy[i]
-        #     leakage += radiation_energy_leakage[i]
-
-        return dKE + dIE + dRE + work + leakage
+        return dKE + dIE + dRE + total_work + total_leak
