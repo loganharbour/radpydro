@@ -65,6 +65,8 @@ class InputParameters:
         else:
             print("Radiation is disabled. Running hydro only calculation")
             self.E = lambda r: 0
+            self.rad_L = 'source'
+            self.rad_R = 'source'
             self.rad_L_val = 0
             self.rad_R_val = 0
 
