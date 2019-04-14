@@ -101,9 +101,6 @@ class RadPydro:
             self.runRad()
         elif self.input.running_mode == 'radhydro':
             self.runRadHydro()
-        else:
-            print('Warning: A runtype (hyro / radiation / radhydro) has to be specified!')
-
 
     def runHydro(self):
         while self.time < self.input.T_final:
