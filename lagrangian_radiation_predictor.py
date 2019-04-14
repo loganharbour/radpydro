@@ -158,3 +158,26 @@ class LagrangianRadiationPredictor:
         systemMatrix = spdiags(data, diags, self.geo.N, self.geo.N, format = 'csr')
 
         self.fields.E_p = spsolve(systemMatrix, self.rhs)
+
+    # Recompute internal energy
+    def recomputeInternalEnergy(self):
+        # Constants
+        a = self.input.a
+        c = self.input.c
+        C_v = self.mat.C_v
+        m = self.mat.m
+        dt = self.rp.timeSteps[-1]
+
+        e_old = self.fields.e_old
+
+        T_old = self.fields.T_old
+        E_pk = (self.fields.E_p + self.fields.E_old) / 2
+        xi_old = self.xi
+        self.mat.recomputeKappa_a(T_old)
+        kappa_a_old = self.mat.kappa_a
+
+        increment = dt * C_v * (m * kappa_a_old * c * (E_pk - a * T_old**4) + xi_old)
+        increment /= m * C_v + dt * m * kappa_a_old * c * 2 * a * T_old**3
+
+        self.fields.e_p = e_old + increment
+

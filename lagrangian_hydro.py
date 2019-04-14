@@ -99,7 +99,7 @@ class LagrangianHydro:
         for i in range(self.geo.N):
             rho_new[i] = m[i] / V_new[i]
 
-    # Recompute radiation energy with updated internal energy
+    # Recompute internal energy
     def recomputeInternalEnergy(self, predictor):
         # Constants
         a = self.input.a
@@ -107,32 +107,19 @@ class LagrangianHydro:
         C_v = self.mat.C_v
         m = self.mat.m
         dt = self.rp.timeSteps[-1]
+
         # Predictor step routine
         if predictor:
             e_old = self.fields.e_old
+            P_old = self.fields.P_old
+            A_old = self.geo.A_old
+            u_pk  = (self.fields.u_old + self.fields.u_p) / 2
 
-            # If running a rad-hydro problem
-            if self.input.enable_radiation:
-                T_old = self.fields.T_old
-                E_pk = (self.fields.E_p + self.fields.E_old) / 2
-                xi_old = self.rp.radPredictor.xi
-                self.mat.recomputeKappa_a(T_old)
-                kappa_a_old = self.mat.kappa_a
+            xi_old = np.zeros(self.geo.N)
+            for i in range(self.geo.N):
+                xi_old[i] = -P_old[i] * (A_old[i+1] * u_pk[i+1] - A_old[i] * u_pk[i])
 
-                increment = dt * C_v * (m * kappa_a_old * c * (E_pk - a * T_old**4) + xi_old)
-                increment /= m * C_v + dt * m * kappa_a_old * c * 2 * a * T_old**3
-
-            # If running a purely hydro problem
-            else:
-                 P_old = self.fields.P_old
-                 A_old = self.geo.A_old
-                 u_pk  = (self.fields.u_old + self.fields.u_p) / 2
-
-                 xi_old = np.zeros(self.geo.N)
-                 for i in range(self.geo.N):
-                     xi_old[i] = -P_old[i] * (A_old[i+1] * u_pk[i+1] - A_old[i] * u_pk[i])
-
-                 increment = dt / m * xi_old
+            increment = dt / m * xi_old
 
             self.fields.e_p = e_old + increment
 
@@ -140,33 +127,17 @@ class LagrangianHydro:
         else:
             e_p = self.fields.e_p
 
-            # If running a rad-hydro problem
-            if self.input.enable_radiation:
-                T_old = self.fields.T_old
-                T_p = self.fields.T_p
-                T_pk = (T_p + T_old) / 2
-                T_pk4 = (T_p**4 + T_old**4) / 2
-                E_k = (self.fields.E + self.fields.E_old) / 2
-                self.mat.recomputeKappa_a(T_pk)
-                kappa_a_pk = self.mat.kappa_a
-                xi_k = self.rp.radCorrector.xi
+            e_old = self.fields.e_old
+            P_pk  = (self.fields.P_old + self.fields.P_p) / 2
+            A_pk  = (self.geo.A_old + self.geo.A_p) / 2
+            u_k   = (self.fields.u + self.fields.u_old) / 2
 
-                increment = dt * C_v * (m * kappa_a_pk * c * (E_k - a * T_pk4) + xi_k)
-                increment /= m * C_v + dt * m * kappa_a_pk * c * 2 * a * T_p**3
+            xi_k = np.zeros(self.geo.N)
+            for i in range(self.geo.N):
+                xi_k[i]  = -(m[i] / dt) * (e_p[i] - e_old[i])
+                xi_k[i] -= P_pk[i] * (A_pk[i+1] * u_k[i+1] - A_pk[i] * u_k[i])
 
-            # If running a purely hydro problem
-            else:
-                e_old = self.fields.e_old
-                P_pk  = (self.fields.P_old + self.fields.P_p) / 2
-                A_pk  = (self.geo.A_old + self.geo.A_p) / 2
-                u_k   = (self.fields.u + self.fields.u_old) / 2
-
-                xi_k = np.zeros(self.geo.N)
-                for i in range(self.geo.N):
-                    xi_k[i]  = -(m[i] / dt) * (e_p[i] - e_old[i])
-                    xi_k[i] -= P_pk[i] * (A_pk[i+1] * u_k[i+1] - A_pk[i] * u_k[i])
-
-                increment = dt / m * xi_k
+            increment = dt / m * xi_k
 
             self.fields.e = e_p + increment
 

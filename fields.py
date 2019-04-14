@@ -120,6 +120,34 @@ class Fields:
                 values[i] = function(self.geo.r_half[i])
         return values
 
+    # Recompute temperature with updated internal energy
+    def recomputeTemperature(self, predictor):
+        C_v = self.mat.C_v
+        if predictor:
+            T_new = self.T_p
+            e_new = self.e_p
+        else:
+            T_new = self.T
+            e_new = self.e
+            
+        for i in range(self.geo.N):
+            T_new[i] = e_new[i] / C_v
+
+    # Recompute pressure with updated density and internal energy
+    def recomputePressure(self, predictor):
+        gamma_minus = self.mat.gamma - 1
+        if predictor:
+            P_new = self.P_p
+            e_new = self.e_p
+            rho_new = self.rho_p
+        else:
+            P_new = self.P
+            e_new = self.e
+            rho_new = self.rho
+
+        for i in range(self.geo.N):
+            P_new[i] = gamma_minus * rho_new[i] * e_new[i]
+
     def addArtificialViscosity(self):
         # Initializing references for shorter notations
         rho = self.rho_old
