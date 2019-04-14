@@ -32,6 +32,12 @@ class Geometry:
 
         # Initialize A, V, r and copy to old
         self.recomputeGeometry(False)
+
+        # Initializing A, V, r at predicted values
+        # In case they are used but not computed later
+        # (for example pure rad computations)
+        self.recomputeGeometry(True)
+        
         self.stepGeometry()
 
     def moveMesh(self, predictor):

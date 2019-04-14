@@ -83,20 +83,16 @@ class RadPydro:
             dE_k = E_k
         else:
             dE_k = abs((self.fields.E - self.fields.E_old) / self.timeSteps[-1])
-        print(max(dE_k))
 
         u_center = np.zeros(self.geo.N)
         for i in range(self.geo.N):
-            u_center = (u[i] + u[i+1]) / 2
+            u_center = abs((u[i] + u[i+1]) / 2)
 
         dt_E = min(relEFactor * E_k / dE_k)
         dt_u = min(dr * F_c / u_center)
         dt_cs = min(dr * F_c / c_s)
 
-        if self.input.enable_radiation:
-            self.timeSteps.append(min(self.input.maxTimeStep, dt_E, dt_u, dt_cs))
-        else:
-            self.timeSteps.append(min(self.input.maxTimeStep, dt_u, dt_cs))
+        self.timeSteps.append(min(self.input.maxTimeStep, dt_E, dt_u, dt_cs))
 
     def run(self):
         if self.input.running_mode == 'hydro':
@@ -167,8 +163,16 @@ class RadPydro:
             # Predictor step
             self.radPredictor.recomputeRadiationEnergy()
 
+            self.radPredictor.recomputeInternalEnergy()
+            self.fields.recomputeTemperature(True)
+            self.fields.recomputePressure(True)
+
             # Corrector step
             self.radCorrector.recomputeRadiationEnergy()
+
+            self.radCorrector.recomputeInternalEnergy()
+            self.fields.recomputeTemperature(False)
+            self.fields.recomputePressure(False)
 
             # Energy conservation check
             energy_diff = self.recomputeEnergyConservation()
@@ -200,7 +204,7 @@ class RadPydro:
 
             self.radPredictor.recomputeRadiationEnergy()
 
-            self.radPredictor.recomputeInternalEnergy(True)
+            self.radPredictor.recomputeInternalEnergy()
             self.fields.recomputeTemperature(True)
             self.fields.recomputePressure(True)
 
@@ -211,7 +215,7 @@ class RadPydro:
 
             self.radCorrector.recomputeRadiationEnergy()
 
-            self.radCorrector.recomputeInternalEnergy(False)
+            self.radCorrector.recomputeInternalEnergy()
             self.fields.recomputeTemperature(False)
             self.fields.recomputePressure(False)
 
@@ -224,6 +228,7 @@ class RadPydro:
             self.geo.stepGeometry()
 
     def recomputeEnergyConservation(self):
+
         kinetic_energy = self.kinetic_energy
         internal_energy = self.internal_energy
         radiation_energy = self.radiation_energy
@@ -283,7 +288,7 @@ class RadPydro:
 
         # Compute the boundary radiation energies in the momentum eqn
         coeff_E_L = 3 * rho_pk[0] * dr_pk[0] * kappa_t_pk_center[0]
-        coeff_E_R = (3 * rho_pk[-1] * dr_pk[-1] * kappa_t_pk_center[-1])
+        coeff_E_R = 3 * rho_pk[-1] * dr_pk[-1] * kappa_t_pk_center[-1]
 
         E_L = (coeff_E_L * E_bL_pk + 4 * E_pk[0]) / (coeff_E_L + 4)
         E_R = (coeff_E_R * E_bR_pk + 4 * E_pk[-1]) / (coeff_E_R + 4)

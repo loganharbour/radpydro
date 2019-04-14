@@ -86,6 +86,12 @@ class LagrangianRadiationCorrector:
             self.xi[i] -= self.P_pk[i] * (self.A_pk[i+1] * self.u_k[i+1] - self.A_pk[i] * self.u_k[i])
 
     def assembleSystem(self, dt):
+
+        self.diag *= 0
+        self.lowerdiag *= 0
+        self.upperdiag *= 0
+        self.rhs *= 0
+
         # Constants
         m = self.mat.m
         a = self.input.a

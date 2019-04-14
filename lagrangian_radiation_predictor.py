@@ -68,6 +68,12 @@ class LagrangianRadiationPredictor:
             self.xi[i] = - P_old[i] * (A_old[i+1] * self.u_pk[i+1] - A_old[i] * self.u_pk[i])
 
     def assembleSystem(self, dt):
+
+        self.diag *= 0
+        self.lowerdiag *= 0
+        self.upperdiag *= 0
+        self.rhs *= 0
+
         N = self.geo.N
         a = self.input.a
         c = self.input.c

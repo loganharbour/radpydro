@@ -16,7 +16,7 @@ class InputParameters:
         self.Tf = None
 
         # Whether or not to enable the hydro/radiation run
-        self.enable_radiation = None
+        self.running_mode = None
 
         # Material properties
         self.C_v = None
@@ -59,17 +59,6 @@ class InputParameters:
         if (self.geometry not in ['slab', 'cylindrical', 'spherical']):
             exit("Geometry type {} not supported".format(self.geometry))
 
-        # Need to run at least one problem
-        if (self.enable_radiation):
-            print("Radiation is enabled. Running rad-hydro calculation.")
-        else:
-            print("Radiation is disabled. Running hydro only calculation")
-            self.E = lambda r: 0
-            self.rad_L = 'source'
-            self.rad_R = 'source'
-            self.rad_L_val = 0
-            self.rad_R_val = 0
-
         # Material properties
         if not isScalar(self.C_v):
             exit("Need to specify C_v as a scalar")
@@ -91,10 +80,10 @@ class InputParameters:
             exit("Need to specify rho initial condition as a function")
         if not callable(self.T):
             exit("Need to specify T initial condition as a function")
-        if callable(self.E) and not self.enable_radiation:
-            print("E initial condition is provided but radiation is disabled")
-        if not callable(self.E) and self.enable_radiation:
+
+        if not callable(self.E):
             exit("Need to specify E initial coniditon as a function")
+
         if not callable(self.u):
             exit("Need to specify u initial condition as a function")
 

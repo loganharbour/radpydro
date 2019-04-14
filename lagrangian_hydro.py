@@ -141,28 +141,3 @@ class LagrangianHydro:
 
             self.fields.e = e_p + increment
 
-    # Recompute temperature with updated internal energy
-    def recomputeTemperature(self, predictor):
-        C_v = self.mat.C_v
-        if predictor:
-            T_new = self.fields.T_p
-            e_new = self.fields.e_p
-        else:
-            T_new = self.fields.T
-            e_new = self.fields.e
-        for i in range(self.geo.N):
-            T_new[i] = e_new[i] / C_v
-
-    # Recompute pressure with updated density and internal energy
-    def recomputePressure(self, predictor):
-        gamma_minus = self.mat.gamma - 1
-        if predictor:
-            P_new = self.fields.P_p
-            e_new = self.fields.e_p
-            rho_new = self.fields.rho_p
-        else:
-            P_new = self.fields.P
-            e_new = self.fields.e
-            rho_new = self.fields.rho
-        for i in range(self.geo.N):
-            P_new[i] = gamma_minus * rho_new[i] * e_new[i]
