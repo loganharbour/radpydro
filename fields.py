@@ -141,7 +141,7 @@ class Fields:
         else:
             T_new = self.T
             e_new = self.e
-
+            
         for i in range(self.geo.N):
             T_new[i] = e_new[i] / C_v
 

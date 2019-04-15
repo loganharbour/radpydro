@@ -18,14 +18,6 @@ input.kappa_s = 1 # g / cm2
 input.a = 0.01372 # [jerks / (cm3 kev4)]
 input.c = 299.792 # [cm / sh]
 
-'''
-# Initial conditions
-input.rho = lambda r: 1   # g/cm3
-input.T = lambda r: 1     # keV
-input.u = lambda r: 0     # cm/sh
-input.E = lambda r: input.a * input.T(0)**4
-'''
-
 # Boundary conditions
 input.hydro_L = 'u'
 input.hydro_L_val = None
@@ -41,6 +33,8 @@ input.CoFactor = 0.5
 input.relEFactor = 0.2
 input.maxTimeStep = 0.0005
 input.T_final = 1.5
+input.T_final = 1.0
+
 
 rp = RadPydro(input)
 rp.run()
