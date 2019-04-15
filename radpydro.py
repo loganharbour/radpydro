@@ -105,13 +105,10 @@ class RadPydro:
             self.runRadHydro()
 
     def runHydro(self):
-        while self.time < self.input.T_final:
 
+        while self.time < self.input.T_final:
             # Compute time step size for this time step
-            if self.input.dt is None:
-                self.computeTimeStep()
-            else:
-                self.timeSteps.append(self.input.CoFactor * self.input.dt)
+            self.computeTimeStep()
 
             # Update time and time step number
             self.time += self.timeSteps[-1]
@@ -129,7 +126,11 @@ class RadPydro:
             self.geo.moveMesh(True)
             self.hydro.recomputeDensity(True)
 
+            self.radPredictor.recomputeRadiationEnergy()
+
+            self.radPredictor.recomputeInternalEnergy()
             self.hydro.recomputeInternalEnergy(True)
+
             self.fields.recomputeTemperature(True)
             self.fields.recomputePressure(True)
 
@@ -151,6 +152,7 @@ class RadPydro:
             self.geo.stepGeometry()
 
     def runRad(self):
+      
         while self.time < self.input.T_final:
             # Compute time step size for this time step
             self.computeTimeStep()
@@ -185,6 +187,7 @@ class RadPydro:
             self.fields.stepFields()
 
     def runRadHydro(self):
+      
         while self.time < self.input.T_final:
             # Compute time step size for this time step
             self.computeTimeStep()

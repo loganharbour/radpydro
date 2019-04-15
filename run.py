@@ -33,6 +33,8 @@ input.CoFactor = 0.5
 input.relEFactor = 0.2
 input.maxTimeStep = 0.0005
 input.T_final = 1.5
+input.T_final = 1.0
+
 
 rp = RadPydro(input)
 rp.run()
