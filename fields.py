@@ -18,7 +18,8 @@ class Fields:
         # Set left velocity BCs as necessary
         if self.input.hydro_L == 'u':
             if self.input.hydro_L_val == None:
-                self.u_L = self.input.u(0)
+                self.u_L = self.input.u(self.input.r_L)
+                self.input.hydro_L_val = self.u_L
             else:
                 self.u_L = self.input.hydro_L_val
                 self.u_IC[0] = self.u_L;
@@ -31,7 +32,8 @@ class Fields:
         # Set right velocity BCs as necessary
         if self.input.hydro_R == 'u':
             if self.input.hydro_R_val == None:
-                self.u_R = self.input.u(self.geo.r_half_old[-1])
+                self.u_R = self.input.u(self.input.r_R)
+                self.hydro_R_val = self.u_R
             else:
                 self.u_R = self.input.hydro_R_val
                 self.u_IC[-1] = self.u_R;
@@ -82,13 +84,23 @@ class Fields:
         self.E_old = np.copy(self.E)
         self.E_IC = np.copy(self.E)
 
-        # Set E boundary conditions
+        # Set left E boundary conditions
         if self.input.rad_L == 'source':
-            self.E_bL = self.input.rad_L_val
+            if self.input.rad_L_val is None:
+                self.E_bL = self.input.E(self.input.r_L)
+                self.input.rad_L_val = self.E_bL
+            else:
+                self.E_bL = self.input.rad_L_val
         else:
             self.E_bL = None
+
+        # Set right E boundary conditions
         if self.input.rad_R == 'source':
-            self.E_bR = self.input.rad_R_val
+            if self.input.rad_R_val is None:
+                self.E_bR = self.input.E(self.input.r_R)
+                self.input.rad_R_val = self.E_bR
+            else:
+                self.E_bR = self.input.rad_R_val
         else:
             self.E_bR = None
 
@@ -119,6 +131,34 @@ class Fields:
             for i in range(self.N + 1):
                 values[i] = function(self.geo.r_half[i])
         return values
+
+    # Recompute temperature with updated internal energy
+    def recomputeTemperature(self, predictor):
+        C_v = self.mat.C_v
+        if predictor:
+            T_new = self.T_p
+            e_new = self.e_p
+        else:
+            T_new = self.T
+            e_new = self.e
+
+        for i in range(self.geo.N):
+            T_new[i] = e_new[i] / C_v
+
+    # Recompute pressure with updated density and internal energy
+    def recomputePressure(self, predictor):
+        gamma_minus = self.mat.gamma - 1
+        if predictor:
+            P_new = self.P_p
+            e_new = self.e_p
+            rho_new = self.rho_p
+        else:
+            P_new = self.P
+            e_new = self.e
+            rho_new = self.rho
+
+        for i in range(self.geo.N):
+            P_new[i] = gamma_minus * rho_new[i] * e_new[i]
 
     def addArtificialViscosity(self):
         # Initializing references for shorter notations
@@ -198,14 +238,15 @@ class Fields:
                   ['Radiation Energy', 'Temperature', 'Pressure']]
         x_axis = [[self.geo.r, self.geo.r_half, self.geo.r],
                   [self.geo.r, self.geo.r,      self.geo.r]]
-        y_axis = [[self.rho, self.u, self.e],
-                  [self.E,   self.T, self.P]]
 
+        rad_temp = (self.E / self.input.a)**(1/4)
+        y_axis = [[self.rho, self.u, self.e],
+                  [rad_temp, self.T, self.P]]
 
         for i in range(2):
             for j in range(3):
                 for k in range(len(y_axis[i][j])):
-                    y_axis[i][j][k] = np.round(y_axis[i][j][k], 5)
+                    y_axis[i][j][k] = np.round(y_axis[i][j][k], 8)
                 ax[i][j].plot(x_axis[i][j], y_axis[i][j])
                 ax[i][j].set_title(titles[i][j])
                 ax[i][j].set_xlim([-0.02, 0.02])

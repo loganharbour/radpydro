@@ -86,6 +86,12 @@ class LagrangianRadiationCorrector:
             self.xi[i] -= self.P_pk[i] * (self.A_pk[i+1] * self.u_k[i+1] - self.A_pk[i] * self.u_k[i])
 
     def assembleSystem(self, dt):
+
+        self.diag *= 0
+        self.lowerdiag *= 0
+        self.upperdiag *= 0
+        self.rhs *= 0
+
         # Constants
         m = self.mat.m
         a = self.input.a
@@ -187,3 +193,28 @@ class LagrangianRadiationCorrector:
         systemMatrix = spdiags(data, diags, self.geo.N, self.geo.N, format = 'csr')
 
         self.fields.E = spsolve(systemMatrix, self.rhs)
+
+    # Recompute internal energy
+    def recomputeInternalEnergy(self):
+        # Constants
+        a = self.input.a
+        c = self.input.c
+        C_v = self.mat.C_v
+        m = self.mat.m
+        dt = self.rp.timeSteps[-1]
+    
+        e_p = self.fields.e_p
+
+        T_old = self.fields.T_old
+        T_p = self.fields.T_p
+        T_pk = (T_p + T_old) / 2
+        T_pk4 = (T_p**4 + T_old**4) / 2
+        E_k = (self.fields.E + self.fields.E_old) / 2
+        self.mat.recomputeKappa_a(T_pk)
+        kappa_a_pk = self.mat.kappa_a
+        xi_k = self.xi
+
+        increment = dt * C_v * (m * kappa_a_pk * c * (E_k - a * T_pk4) + xi_k)
+        increment /= m * C_v + dt * m * kappa_a_pk * c * 2 * a * T_p**3
+
+        self.fields.e = e_p + increment

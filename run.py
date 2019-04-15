@@ -5,39 +5,50 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 input = InputParameters()
-input.enable_radiation = False
+input.running_mode = 'radhydro'
 input.geometry = 'slab'
-input.N = 250
-input.R_L = -0.25
-input.R_R = 0.25
-input.r_half = np.linspace(input.R_L, input.R_R, num=input.N + 1) # cm
-input.C_v = 1.66 # jerks / (cm3 eV)
+input.N = 1000
+input.r_L = -0.25
+input.r_R = 0.25
+input.r_half = np.linspace(input.r_L, input.r_R, num=input.N + 1) # cm
+input.C_v = 0.14472799784454 # jerks / (cm3 eV)
+input.gamma = 5/3 # cm3 / g
+input.kappa = [577.35, 0, 1, 0] # g/cm2
+input.kappa_s = 1 # g / cm2
+input.a = 0.01372 # [jerks / (cm3 kev4)]
+input.c = 299.792 # [cm / sh]
 
 '''
 # Initial conditions
-ic = InitialConditions(input)
-input.rho = ic.rho     # g/cm3
-input.T = ic.T         # keV
-input.u = ic.u         # cm/sh
-input.E = ic.E
+input.rho = lambda r: 1   # g/cm3
+input.T = lambda r: 1     # keV
+input.u = lambda r: 0     # cm/sh
+input.E = lambda r: input.a * input.T(0)**4
 '''
 
 # Boundary conditions
 input.hydro_L = 'u'
-input.hydro_L_val = 1.42601
+input.hydro_L_val = None
 input.hydro_R = 'u'
-input.hydro_R_val = 1.32658
-input.rad_L = 'reflective'
+input.hydro_R_val = None
+input.rad_L = 'source'
 input.rad_L_val = None
 input.rad_R = 'source'
-input.rad_R_val = 0
+input.rad_R_val = None
 
 # Iteration controls
 input.CoFactor = 0.5
 input.relEFactor = 0.2
-input.maxTimeStep = 0.1
+input.maxTimeStep = 0.0005
 input.T_final = 1.5
 
 rp = RadPydro(input)
-rp.run(True)
+rp.run()
 rp.fields.plotFields()
+
+fig = plt.figure()
+plt.plot(rp.geo.r, rp.fields.T, label='T')
+plt.plot(rp.geo.r, (rp.fields.E/rp.input.a)**(1/4), label='$\\theta$')
+plt.xlim([-0.02, 0.02])
+plt.legend(loc=0)
+plt.show()

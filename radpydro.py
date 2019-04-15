@@ -38,9 +38,8 @@ class RadPydro:
         self.hydro = LagrangianHydro(self)
 
         # Initialize radiation problem (if used)
-        if input.enable_radiation:
-            self.radPredictor = LagrangianRadiationPredictor(self)
-            self.radCorrector = LagrangianRadiationCorrector(self)
+        self.radPredictor = LagrangianRadiationPredictor(self)
+        self.radCorrector = LagrangianRadiationCorrector(self)
 
         # Init storage for energies in conservation check
         self.kinetic_energy = []
@@ -89,18 +88,23 @@ class RadPydro:
 
         u_center = np.zeros(self.geo.N)
         for i in range(self.geo.N):
-            u_center = (u[i] + u[i+1]) / 2
+            u_center = abs((u[i] + u[i+1]) / 2)
 
         dt_E = min(relEFactor * E_k / dE_k)
         dt_u = min(dr * F_c / u_center)
         dt_cs = min(dr * F_c / c_s)
 
-        if self.input.enable_radiation:
-            self.timeSteps.append(min(self.input.maxTimeStep, dt_E, dt_u, dt_cs))
-        else:
-            self.timeSteps.append(min(self.input.maxTimeStep, dt_u, dt_cs))
+        self.timeSteps.append(min(self.input.maxTimeStep, dt_E, dt_u, dt_cs))
 
-    def run(self, PLOT=False):
+    def run(self):
+        if self.input.running_mode == 'hydro':
+            self.runHydro()
+        elif self.input.running_mode == 'rad':
+            self.runRad()
+        elif self.input.running_mode == 'radhydro':
+            self.runRadHydro()
+
+    def runHydro(self):
         while self.time < self.input.T_final:
 
             # Compute time step size for this time step
@@ -117,13 +121,81 @@ class RadPydro:
                     % (self.timeStep_num, self.time))
             print('=========================================================\n')
 
-            if PLOT:
-                if self.timeStep_num % 100 == 0 or self.timeStep_num == 1:
-                    self.fields.plotFields()
-                else:
-                    pass
-            else:
-                pass
+            # Add artificial viscosity for this time step
+            self.fields.addArtificialViscosity()
+
+            # Predictor step
+            self.hydro.recomputeVelocity(True)
+            self.geo.moveMesh(True)
+            self.hydro.recomputeDensity(True)
+
+            self.hydro.recomputeInternalEnergy(True)
+            self.fields.recomputeTemperature(True)
+            self.fields.recomputePressure(True)
+
+            # Corrector step
+            self.hydro.recomputeVelocity(False)
+            self.geo.moveMesh(False)
+            self.hydro.recomputeDensity(False)
+
+            self.hydro.recomputeInternalEnergy(False)
+            self.fields.recomputeTemperature(False)
+            self.fields.recomputePressure(False)
+
+            # Energy conservation check
+            energy_diff = self.recomputeEnergyConservation()
+            print('Energy conservation check: ', energy_diff, '\n')
+
+            # Copy to old containers for next time step
+            self.fields.stepFields()
+            self.geo.stepGeometry()
+
+    def runRad(self):
+        while self.time < self.input.T_final:
+            # Compute time step size for this time step
+            self.computeTimeStep()
+
+            # Update time and time step number
+            self.time += self.timeSteps[-1]
+            self.timeStep_num += 1
+            print('=========================================================')
+            print('Starting time step %i,  time = %.3e'  \
+                    % (self.timeStep_num, self.time))
+            print('=========================================================\n')
+
+            # Predictor step
+            self.radPredictor.recomputeRadiationEnergy()
+
+            self.radPredictor.recomputeInternalEnergy()
+            self.fields.recomputeTemperature(True)
+            self.fields.recomputePressure(True)
+
+            # Corrector step
+            self.radCorrector.recomputeRadiationEnergy()
+
+            self.radCorrector.recomputeInternalEnergy()
+            self.fields.recomputeTemperature(False)
+            self.fields.recomputePressure(False)
+
+            # Energy conservation check
+            energy_diff = self.recomputeEnergyConservation()
+            print('Energy conservation check: ', energy_diff, '\n')
+
+            # Copy to old containers for next time step
+            self.fields.stepFields()
+
+    def runRadHydro(self):
+        while self.time < self.input.T_final:
+            # Compute time step size for this time step
+            self.computeTimeStep()
+
+            # Update time and time step number
+            self.time += self.timeSteps[-1]
+            self.timeStep_num += 1
+            print('=========================================================')
+            print('Starting time step %i,  time = %.3e'  \
+                    % (self.timeStep_num, self.time))
+            print('=========================================================\n')
 
             # Add artificial viscosity for this time step
             self.fields.addArtificialViscosity()
@@ -133,24 +205,22 @@ class RadPydro:
             self.geo.moveMesh(True)
             self.hydro.recomputeDensity(True)
 
-            if self.input.enable_radiation:
-                self.radPredictor.recomputeRadiationEnergy()
+            self.radPredictor.recomputeRadiationEnergy()
 
-            self.hydro.recomputeInternalEnergy(True)
-            self.hydro.recomputeTemperature(True)
-            self.hydro.recomputePressure(True)
+            self.radPredictor.recomputeInternalEnergy()
+            self.fields.recomputeTemperature(True)
+            self.fields.recomputePressure(True)
 
             # Corrector step
             self.hydro.recomputeVelocity(False)
             self.geo.moveMesh(False)
             self.hydro.recomputeDensity(False)
 
-            if self.input.enable_radiation:
-                self.radCorrector.recomputeRadiationEnergy()
+            self.radCorrector.recomputeRadiationEnergy()
 
-            self.hydro.recomputeInternalEnergy(False)
-            self.hydro.recomputeTemperature(False)
-            self.hydro.recomputePressure(False)
+            self.radCorrector.recomputeInternalEnergy()
+            self.fields.recomputeTemperature(False)
+            self.fields.recomputePressure(False)
 
             # Energy conservation check
             energy_diff = self.recomputeEnergyConservation()
@@ -161,6 +231,7 @@ class RadPydro:
             self.geo.stepGeometry()
 
     def recomputeEnergyConservation(self):
+
         kinetic_energy = self.kinetic_energy
         internal_energy = self.internal_energy
         radiation_energy = self.radiation_energy
@@ -220,7 +291,7 @@ class RadPydro:
 
         # Compute the boundary radiation energies in the momentum eqn
         coeff_E_L = 3 * rho_pk[0] * dr_pk[0] * kappa_t_pk_center[0]
-        coeff_E_R = (3 * rho_pk[-1] * dr_pk[-1] * kappa_t_pk_center[-1])
+        coeff_E_R = 3 * rho_pk[-1] * dr_pk[-1] * kappa_t_pk_center[-1]
 
         E_L = (coeff_E_L * E_bL_pk + 4 * E_pk[0]) / (coeff_E_L + 4)
         E_R = (coeff_E_R * E_bR_pk + 4 * E_pk[-1]) / (coeff_E_R + 4)
