@@ -18,13 +18,14 @@ class Fields:
         # Set left velocity BCs as necessary
         if self.input.hydro_L == 'u':
             if self.input.hydro_L_val == None:
-                self.u_L = self.input.u(0)
+                self.u_L = self.input.u(self.geo.r_half_old[0])
+                self.input.hydro_L_val = self.u_L
             else:
                 self.u_L = self.input.hydro_L_val
-                self.u_IC[0] = self.u_L;
-                self.u_old[0] = self.u_L;
-                self.u_p[0] = self.u_L;
-                self.u[0] = self.u_L;
+                self.u_IC[0] = self.u_L
+                self.u_old[0] = self.u_L
+                self.u_p[0] = self.u_L
+                self.u[0] = self.u_L
         else:
             self.u_L = None
 
@@ -32,12 +33,13 @@ class Fields:
         if self.input.hydro_R == 'u':
             if self.input.hydro_R_val == None:
                 self.u_R = self.input.u(self.geo.r_half_old[-1])
+                self.input.hydro_R_val = self.u_R
             else:
                 self.u_R = self.input.hydro_R_val
-                self.u_IC[-1] = self.u_R;
-                self.u_old[-1] = self.u_R;
-                self.u_p[-1] = self.u_R;
-                self.u[-1] = self.u_R;
+                self.u_IC[-1] = self.u_R
+                self.u_old[-1] = self.u_R
+                self.u_p[-1] = self.u_R
+                self.u[-1] = self.u_R
         else:
             self.u_R = None
 
@@ -129,7 +131,7 @@ class Fields:
         else:
             T_new = self.T
             e_new = self.e
-            
+
         for i in range(self.geo.N):
             T_new[i] = e_new[i] / C_v
 
@@ -220,7 +222,7 @@ class Fields:
         self.P_old += self.Q
 
 
-    def plotFields(self):
+    def plotFields(self, xlim=None):
         fig, ax = plt.subplots(nrows=2, ncols=3)
         titles = [['Density', 'Velocity', 'Internal Enegy'],
                   ['Radiation Energy', 'Temperature', 'Pressure']]
@@ -233,8 +235,10 @@ class Fields:
         for i in range(2):
             for j in range(3):
                 for k in range(len(y_axis[i][j])):
-                    y_axis[i][j][k] = np.round(y_axis[i][j][k], 5)
+                    y_axis[i][j][k] = np.round(y_axis[i][j][k], 8)
                 ax[i][j].plot(x_axis[i][j], y_axis[i][j])
                 ax[i][j].set_title(titles[i][j])
+                if xlim is not None:
+                    ax[i][j].set_xlim(xlim)
         plt.tight_layout()
-        plt.show()
+        plt.savefig('plot_fields.pdf')
