@@ -1,6 +1,5 @@
 from inputparameters import InputParameters
 from radpydro import RadPydro
-from initial_conditions import InitialConditions
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -14,9 +13,15 @@ input.r_half = np.linspace(input.r_L, input.r_R, num=input.N + 1) # cm
 input.C_v = 0.14472799784454 # jerks / (cm3 eV)
 input.gamma = 5/3 # cm3 / g
 input.kappa = [577.35, 0, 1, 0] # g/cm2
-input.kappa_s = 1 # g / cm2
+input.kappa_s = 0 # g / cm2
 input.a = 0.01372 # [jerks / (cm3 kev4)]
 input.c = 299.792 # [cm / sh]
+
+# Initial conditions
+input.rho = lambda r: 1 * (r <=0) + 1.29731782 * (r > 0)
+input.u = lambda r: 0.152172533 * (r <= 0) + 0.117297805 * (r > 0)
+input.T = lambda r: 0.1 * (r <= 0) + 0.119475741 * (r > 0)
+input.E = lambda r: 1.37201720e-6 * (r <= 0) + 2.79562228e-6 * (r > 0)
 
 # Boundary conditions
 input.hydro_L = 'u'
@@ -32,8 +37,7 @@ input.rad_R_val = None
 input.CoFactor = 0.5
 input.relEFactor = 0.2
 input.maxTimeStep = 0.0005
-input.T_final = 1.5
-input.T_final = 1.0
+input.T_final = 0.1
 
 
 rp = RadPydro(input)

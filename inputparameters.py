@@ -1,11 +1,10 @@
 import numpy as np
 from sys import exit
-from initial_conditions import InitialConditions
 
 def isScalar(value):
     return isinstance(value, float) or isinstance(value, int)
 
-class InputParameters(InitialConditions):
+class InputParameters():
     def __init__(self):
         # Geometry specficiations
         self.geometry = 'slab'
@@ -31,7 +30,10 @@ class InputParameters(InitialConditions):
         self.c = 299.792 # [cm / sh]
 
         # Initial conditions
-        InitialConditions.__init__(self, self.r_L, self.r_R)
+        self.rho = None
+        self.u = None
+        self.T = None
+        self.E = None
 
         # Hydro boundary conditions
         self.hydro_L = None
